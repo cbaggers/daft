@@ -9,7 +9,8 @@
                :rtg-math
                :nineveh
                :dirt
-               :cepl.skitter.sdl2)
+               :cepl.skitter.sdl2
+               :temporal-functions)
   :components ((:file "package")
                (:file "images")
                (:file "daft")

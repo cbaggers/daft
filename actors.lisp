@@ -53,7 +53,7 @@
 (defun draw-actor (actor res)
   (let ((size (resolution
                (sampler-texture
-                (slot-value tmp0 'visual)))))
+                (slot-value actor 'visual)))))
     (map-g #'simple-cube *cube-stream*
            :screen-height *screen-height-in-game-units*
            :screen-ratio (/ (x res) (y res))
