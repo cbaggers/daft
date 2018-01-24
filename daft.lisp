@@ -46,21 +46,13 @@
   (/ (get-internal-real-time) 1000f0))
 
 (defun step-engine ()
-  (let ((res (surface-resolution
-              (current-surface
-               (cepl-context)))))
-    (setf (viewport-resolution (current-viewport))
-          res)
-    (clear)
-    (map-g #'simple-cube *cube-stream*
-           :screen-height *screen-height-in-game-units*
-           :screen-ratio (/ (x res) (y res))
-           :transform (m4:translation (v! (sin (now))
-                                          0
-                                          0))
-           :sam (gethash "shuttle2.png" *samplers*))
-    (swap)))
+  (setf (viewport-resolution (current-viewport))
+        (surface-resolution
+         (current-surface
+          (cepl-context))))
+  (clear)
+  (update-actors)
+  (swap))
 
 (def-simple-main-loop daft (:on-start #'init)
   (step-engine))
-

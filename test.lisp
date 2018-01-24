@@ -10,5 +10,6 @@
       (play-sound :bang)
       (die))))
 
-(define-actor ship ((:visual "shuttle2.png"))
-  )
+(define-actor ship ((:visual "shuttle2.png")
+                    (start-time (now)))
+  (setf x (tan (+ start-time (now) 1f0))))

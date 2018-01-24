@@ -1,8 +1,10 @@
 (in-package :daft)
 
 (defclass actor ()
-  ((pos :initform (v! 0 0 0) :initarg :pos)
-   (rot :initform 0f0 :initarg :rot)))
+  ((pos :initform (v! 0 0 0) :initarg :pos
+        :accessor pos)
+   (rot :initform 0f0 :initarg :rot
+        :accessor rot)))
 
 (defvar *current-actor-state*
   (make-array 0 :element-type 'actor :adjustable t
@@ -10,9 +12,6 @@
 (defvar *next-actor-state*
   (make-array 0 :element-type 'actor :adjustable t
               :fill-pointer 0))
-
-(defun add-new-actor ()
-  )
 
 (defgeneric update (actor))
 
@@ -33,14 +32,40 @@
              (let ((*self* self))
                ,@body)))))))
 
+(defun update-actors ()
+  (let ((res (viewport-resolution (current-viewport))))
+    (loop :for actor :across *current-actor-state* :do
+       (update actor)
+       (draw-actor actor res))))
+
+(defun draw-actor (actor res)
+  (map-g #'simple-cube *cube-stream*
+         :screen-height *screen-height-in-game-units*
+         :screen-ratio (/ (x res) (y res))
+         :transform (m4:translation (pos actor))
+         :sam (gethash "shuttle2.png" *samplers*)))
+
 ;;------------------------------------------------------------
 
 (defvar *self*)
 
 (defun spawn (actor-kind-name pos
               &rest args &key &allow-other-keys)
-  (declare (ignore actor-kind-name pos args))
-  nil)
+  (%spawn actor-kind-name (pos *self*) pos args))
+
+(defun spawn! (actor-kind-name pos
+               &rest args &key &allow-other-keys)
+  (%spawn actor-kind-name (v! 0 0 0) pos args))
+
+(defun %spawn (actor-kind-name parent-pos pos args)
+  (let* ((hack-name (intern (symbol-name actor-kind-name)
+                            :daft))
+         (actor (apply #'make-instance hack-name
+                       args)))
+    (setf (pos actor)
+          (v3:+ parent-pos (v! (x pos) (y pos) 0)))
+    (vector-push-extend actor *current-actor-state*)
+    actor))
 
 (defun die ()
   nil)
