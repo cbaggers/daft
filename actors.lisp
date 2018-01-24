@@ -38,7 +38,11 @@
                              (y (y (slot-value self 'pos))))
              (with-slots ,local-var-names self
                (let ((*self* self))
-                 ,@body))))))))
+                 ,@body))))
+         (push
+          (lambda ()
+            (update-all-existing-actors ',name ,visual))
+          *tasks-for-next-frame*)))))
 
 (defun update-actors ()
   (let ((res (viewport-resolution (current-viewport))))
@@ -52,6 +56,12 @@
          :screen-ratio (/ (x res) (y res))
          :transform (m4:translation (pos actor))
          :sam (slot-value actor 'visual)))
+
+(defun update-all-existing-actors (type-name visual)
+  (loop :for a :across *current-actor-state* :do
+     (when (typep a type-name)
+       (setf (slot-value a 'visual)
+             (load-tex visual)))))
 
 ;;------------------------------------------------------------
 

@@ -2,6 +2,7 @@
 
 (defvar *cube-stream* nil)
 (defparameter *screen-height-in-game-units* 10f0)
+(defvar *tasks-for-next-frame* nil)
 
 (defun-g vert-game-units-to-gl ((pos :vec4)
                                 (screen-height :float)
@@ -46,6 +47,9 @@
   (/ (get-internal-real-time) 1000f0))
 
 (defun step-engine ()
+  (setf *tasks-for-next-frame*
+        (map nil #'funcall *tasks-for-next-frame*))
+
   (setf (viewport-resolution (current-viewport))
         (surface-resolution
          (current-surface

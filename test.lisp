@@ -12,4 +12,5 @@
 
 (define-actor ship ((:visual "shuttle2.png")
                     (start-time (now)))
-  (setf x (sin (mod (+ start-time (now) 1f0) 2pi-f))))
+  (setf x (sin (+ (mod start-time 2pi-f)
+                  (mod (now) 2pi-f)))))
