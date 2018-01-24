@@ -1,7 +1,7 @@
 (in-package #:daft)
 
 (defvar *cube-stream* nil)
-(defparameter *screen-height-in-game-units* 10f0)
+(defparameter *screen-height-in-game-units* 600f0)
 (defvar *tasks-for-next-frame* nil)
 
 (defun-g vert-game-units-to-gl ((pos :vec4)
@@ -19,8 +19,10 @@
                   &uniform
                   (screen-height :float)
                   (screen-ratio :float)
-                  (transform :mat4))
-  (let* ((game-v4 (v! (pos vert) 1))
+                  (transform :mat4)
+                  (size :vec2))
+  (let* ((game-v4 (* (v! (pos vert) 1)
+                     (v! size 1 1)))
          (transformed (* transform game-v4))
          (gv4 (vert-game-units-to-gl transformed
                                      screen-height

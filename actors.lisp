@@ -51,11 +51,15 @@
        (draw-actor actor res))))
 
 (defun draw-actor (actor res)
-  (map-g #'simple-cube *cube-stream*
-         :screen-height *screen-height-in-game-units*
-         :screen-ratio (/ (x res) (y res))
-         :transform (m4:translation (pos actor))
-         :sam (slot-value actor 'visual)))
+  (let ((size (resolution
+               (sampler-texture
+                (slot-value tmp0 'visual)))))
+    (map-g #'simple-cube *cube-stream*
+           :screen-height *screen-height-in-game-units*
+           :screen-ratio (/ (x res) (y res))
+           :transform (m4:translation (pos actor))
+           :sam (slot-value actor 'visual)
+           :size size)))
 
 (defun update-all-existing-actors (type-name visual)
   (loop :for a :across *current-actor-state* :do
@@ -100,8 +104,11 @@
   0f0)
 
 (defun move-forward (distance)
-  (declare (ignore distance))
-  nil)
+  (with-slots (pos rot) *self*
+    (setf pos
+          (v3:+ pos
+                (v3:*s (v! (sin (radians rot)) (cos (radians rot)) 0)
+                       (float distance 1f0))))))
 
 (defun gamepad-button-a ())
 
