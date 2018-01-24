@@ -4,7 +4,8 @@
   ((pos :initform (v! 0 0 0) :initarg :pos
         :accessor pos)
    (rot :initform 0f0 :initarg :rot
-        :accessor rot)))
+        :accessor rot)
+   (visual :initarg :visual)))
 
 (defvar *current-actor-state*
   (make-array 0 :element-type 'actor :adjustable t
@@ -18,19 +19,26 @@
 (defmacro define-actor (name values &body body)
   (let* ((local-vars (remove-if #'keywordp values
                                 :key #'first))
+         (keyword-vars (remove-if-not #'keywordp values
+                                      :key #'first))
          (local-var-names (mapcar #'first local-vars)))
-    `(progn
-       (defclass ,name (actor)
-         ,(loop :for (var-name var-val) :in local-vars :collect
-             `(,var-name :initform ,var-val
-                         :initarg ,(intern (symbol-name var-name)
-                                           :keyword))))
-       (defmethod update ((self ,name))
-         (symbol-macrolet ((x (x (slot-value self 'pos)))
-                           (y (y (slot-value self 'pos))))
-           (with-slots ,local-var-names self
-             (let ((*self* self))
-               ,@body)))))))
+    (destructuring-bind (&key visual sprite-size)
+        (reduce #'append keyword-vars)
+      (declare (ignore sprite-size))
+      `(progn
+         (defclass ,name (actor)
+           ((visual :initform (load-tex ,visual))
+            ,@(loop :for (var-name var-val) :in local-vars :collect
+                 `(,var-name
+                   :initform ,var-val
+                   :initarg ,(intern (symbol-name var-name)
+                                     :keyword)))))
+         (defmethod update ((self ,name))
+           (symbol-macrolet ((x (x (slot-value self 'pos)))
+                             (y (y (slot-value self 'pos))))
+             (with-slots ,local-var-names self
+               (let ((*self* self))
+                 ,@body))))))))
 
 (defun update-actors ()
   (let ((res (viewport-resolution (current-viewport))))
@@ -43,7 +51,7 @@
          :screen-height *screen-height-in-game-units*
          :screen-ratio (/ (x res) (y res))
          :transform (m4:translation (pos actor))
-         :sam (gethash "shuttle2.png" *samplers*)))
+         :sam (slot-value actor 'visual)))
 
 ;;------------------------------------------------------------
 
