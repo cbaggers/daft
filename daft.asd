@@ -11,5 +11,6 @@
                :dirt
                :cepl.skitter.sdl2)
   :components ((:file "package")
-               (:file "daft")))
-
+               (:file "images")
+               (:file "daft")
+               (:file "actors")))
