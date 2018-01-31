@@ -6,6 +6,7 @@
    (rot :initform 0f0 :initarg :rot
         :accessor rot)
    (visual :initarg :visual)
+   (next :initform nil)
    (dead :initform nil)))
 
 (defun radius (actor)
@@ -44,6 +45,13 @@
              (with-slots ,local-var-names self
                (let ((*self* self))
                  ,@body))))
+         (defmethod copy-actor-state ((src ,name))
+           (with-slots (next) src
+             ,@(loop :for slot :in (append '(pos rot visual)
+                                           local-var-names)
+                  :collect
+                  `(setf (slot-value next ',slot)
+                         (slot-value src ',slot)))))
          (push
           (lambda ()
             (update-all-existing-actors ',name ,visual))
@@ -51,20 +59,14 @@
 
 (defun update-actors ()
   (let ((res (viewport-resolution (current-viewport))))
+    (setf (fill-pointer *next-actors*) 0)
     (loop :for actor :across *current-actors* :do
-       (update actor)
-       (draw-actor actor res))))
-
-(defun remove-dead-actors ()
-  (let ((at-least (length *current-actors*)))
-    (when (< (length *next-actors*) at-least)
-      (adjust-array *next-actors* at-least)))
-  (let ((index 0))
-    (loop :for actor :across *current-actors* :do
-       (unless (slot-value actor 'dead)
-         (setf (aref *next-actors* index) actor)
-         (incf index)))
-    (setf (fill-pointer *next-actors*) index)
+       (copy-actor-state actor)
+       (with-slots (next) actor
+         (update next)
+         (unless (slot-value next 'dead)
+           (draw-actor actor res)
+           (vector-push-extend next *next-actors*))))
     (rotatef *current-actors* *next-actors*)))
 
 (defun draw-actor (actor res)
@@ -100,10 +102,14 @@
   (let* ((hack-name (intern (symbol-name actor-kind-name)
                             :daft))
          (actor (apply #'make-instance hack-name
-                       args)))
+                       args))
+         (next (apply #'make-instance hack-name
+                      args)))
+    (setf (slot-value actor 'next) next)
+    (setf (slot-value next 'next) actor)
     (setf (pos actor)
           (v3:+ parent-pos (v! (x pos) (y pos) 0)))
-    (vector-push-extend actor *current-actors*)
+    (vector-push-extend actor *next-actors*)
     actor))
 
 (defun die ()
