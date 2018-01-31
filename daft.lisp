@@ -58,6 +58,7 @@
           (cepl-context))))
   (clear)
   (update-actors)
+  (remove-dead-actors)
   (swap))
 
 (def-simple-main-loop daft (:on-start #'init)

@@ -5,12 +5,17 @@
         :accessor pos)
    (rot :initform 0f0 :initarg :rot
         :accessor rot)
-   (visual :initarg :visual)))
+   (visual :initarg :visual)
+   (dead :initform nil)))
 
-(defvar *current-actor-state*
+(defun radius (actor)
+  (with-slots (visual) actor
+    (/ (x (resolution (sampler-texture visual))) 2f0)))
+
+(defvar *current-actors*
   (make-array 0 :element-type 'actor :adjustable t
               :fill-pointer 0))
-(defvar *next-actor-state*
+(defvar *next-actors*
   (make-array 0 :element-type 'actor :adjustable t
               :fill-pointer 0))
 
@@ -46,9 +51,21 @@
 
 (defun update-actors ()
   (let ((res (viewport-resolution (current-viewport))))
-    (loop :for actor :across *current-actor-state* :do
+    (loop :for actor :across *current-actors* :do
        (update actor)
        (draw-actor actor res))))
+
+(defun remove-dead-actors ()
+  (let ((at-least (length *current-actors*)))
+    (when (< (length *next-actors*) at-least)
+      (adjust-array *next-actors* at-least)))
+  (let ((index 0))
+    (loop :for actor :across *current-actors* :do
+       (unless (slot-value actor 'dead)
+         (setf (aref *next-actors* index) actor)
+         (incf index)))
+    (setf (fill-pointer *next-actors*) index)
+    (rotatef *current-actors* *next-actors*)))
 
 (defun draw-actor (actor res)
   (let ((size (resolution
@@ -62,7 +79,7 @@
            :size size)))
 
 (defun update-all-existing-actors (type-name visual)
-  (loop :for a :across *current-actor-state* :do
+  (loop :for a :across *current-actors* :do
      (when (typep a type-name)
        (setf (slot-value a 'visual)
              (load-tex visual)))))
@@ -86,18 +103,14 @@
                        args)))
     (setf (pos actor)
           (v3:+ parent-pos (v! (x pos) (y pos) 0)))
-    (vector-push-extend actor *current-actor-state*)
+    (vector-push-extend actor *current-actors*)
     actor))
 
 (defun die ()
-  nil)
+  (setf (slot-value *self* 'dead) t))
 
 (defun play-sound (sound-name)
   (declare (ignore sound-name))
-  nil)
-
-(defun touching-p (actor/s)
-  (declare (ignore actor/s))
   nil)
 
 (defun mouse-x ()
@@ -114,5 +127,8 @@
 
 (defun actors-in-range (distance &optional actor-kind)
   (declare (ignore distance actor-kind)))
+
+(defun offscreen-p ()
+  nil)
 
 ;;------------------------------------------------------------

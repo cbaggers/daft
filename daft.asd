@@ -14,4 +14,5 @@
   :components ((:file "package")
                (:file "images")
                (:file "daft")
-               (:file "actors")))
+               (:file "actors")
+               (:file "collision")))
