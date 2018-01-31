@@ -14,7 +14,7 @@
     (setf x (* (sin time) 200))
 
     (when (funcall fire)
-      (spawn 'bullet (v! 0 30)))))
+      (spawn 'bullet (v! 0 40)))))
 
 (defun refresh-actors ()
   (setf *current-actors*
