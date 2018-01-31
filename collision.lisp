@@ -3,8 +3,9 @@
 (defun touching-p (&optional set-of-actors)
   (declare (ignore set-of-actors))
   (let ((self *self*))
-    (loop :for actor :across *current-actor-state*
-       :when (and (not (eq actor self))
+    (loop :for actor :across *current-actors*
+       :when (and (not (eq (slot-value actor 'next)
+                           self))
                   (%touching-p self actor))
        :collect actor)))
 
