@@ -90,13 +90,16 @@
 
 (defun spawn (actor-kind-name pos
               &rest args &key &allow-other-keys)
-  (%spawn actor-kind-name (pos *self*) pos args))
+  (%spawn actor-kind-name (pos *self*) pos args
+          *next-actors*))
 
 (defun spawn! (actor-kind-name pos
                &rest args &key &allow-other-keys)
-  (%spawn actor-kind-name (v! 0 0 0) pos args))
+  (%spawn actor-kind-name (v! 0 0 0) pos args
+          *current-actors*))
 
-(defun %spawn (actor-kind-name parent-pos pos args)
+(defun %spawn (actor-kind-name parent-pos pos args
+               into)
   (let* ((hack-name (intern (symbol-name actor-kind-name)
                             :daft))
          (actor (apply #'make-instance hack-name
@@ -107,7 +110,7 @@
     (setf (slot-value next 'next) actor)
     (setf (pos actor)
           (v3:+ parent-pos (v! (x pos) (y pos) 0)))
-    (vector-push-extend actor *next-actors*)
+    (vector-push-extend actor into)
     actor))
 
 (defun die ()
