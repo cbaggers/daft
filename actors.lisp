@@ -14,11 +14,9 @@
     (/ (x (resolution (sampler-texture visual))) 2f0)))
 
 (defvar *current-actors*
-  (make-array 0 :element-type 'actor :adjustable t
-              :fill-pointer 0))
+  (make-array 0 :adjustable t :fill-pointer 0))
 (defvar *next-actors*
-  (make-array 0 :element-type 'actor :adjustable t
-              :fill-pointer 0))
+  (make-array 0 :adjustable t :fill-pointer 0))
 
 (defgeneric update (actor))
 
