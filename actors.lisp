@@ -79,8 +79,14 @@
                          (slot-value src ',slot)))))
          (push
           (lambda ()
-            (update-all-existing-actors
-             ',name ,visual ',state-names))
+            (let ((vars
+                   (list
+                    ,@(loop :for (name val dont-change)
+                         :in local-vars
+                         :unless dont-change
+                         :collect `(list ',name ,val)))))
+              (update-all-existing-actors
+               ',name ,visual ',state-names vars)))
           *tasks-for-next-frame*)))))
 
 (defun update-actors ()
@@ -95,21 +101,27 @@
            (vector-push-extend next *next-actors*))))
     (rotatef *current-actors* *next-actors*)))
 
+(defvar *blend-params* (make-blending-params))
+
 (defun draw-actor (actor res)
   (let ((size (resolution
                (sampler-texture
                 (slot-value actor 'visual)))))
-    (map-g #'simple-cube *cube-stream*
-           :screen-height *screen-height-in-game-units*
-           :screen-ratio (/ (x res) (y res))
-           :transform (m4:translation (pos actor))
-           :sam (slot-value actor 'visual)
-           :size size)))
+    (with-blending *blend-params*
+      (map-g #'simple-cube *cube-stream*
+             :screen-height *screen-height-in-game-units*
+             :screen-ratio (/ (x res) (y res))
+             :transform (m4:translation (pos actor))
+             :sam (slot-value actor 'visual)
+             :size size))))
 
 (defun update-all-existing-actors (type-name
                                    new-visual
-                                   new-valid-states)
+                                   new-valid-states
+                                   vars)
   (loop :for a :across *current-actors* :do
+     (loop :for (slot-name val) :in vars :do
+        (setf (slot-value a slot-name) val))
      (with-slots (visual state) a
        (when (typep a type-name)
          (setf visual (load-tex new-visual)))
