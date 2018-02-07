@@ -29,11 +29,9 @@
   (loop :for (state-name . body) :in states :collect
      (let ((state-func-name (symb name :- state-name)))
        `(defun ,state-func-name (self)
-          (symbol-macrolet ((x (x (slot-value self 'pos)))
-                            (y (y (slot-value self 'pos))))
-            (with-slots ,local-var-names self
-              (let ((*self* self))
-                ,@body)))))))
+          (with-slots ,local-var-names self
+            (let ((*self* self))
+              ,@body))))))
 
 (defmacro define-actor (name values &body states)
   (assert states)
