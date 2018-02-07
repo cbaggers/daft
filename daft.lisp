@@ -49,8 +49,10 @@
   (/ (get-internal-real-time) 1000f0))
 
 (defun step-engine ()
-  (setf *tasks-for-next-frame*
-        (map nil #'funcall *tasks-for-next-frame*))
+  (loop :for task :in *tasks-for-next-frame* :do
+     (restart-case (funcall task)
+       (continue () :report "Daft: Skip Task")))
+  (setf *tasks-for-next-frame* nil)
 
   (setf (viewport-resolution (current-viewport))
         (surface-resolution
