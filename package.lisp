@@ -1,8 +1,8 @@
 ;;;; package.lisp
 
-(defpackage #:daft
+(uiop:define-package #:daft
   (:use #:cl :cepl :vari :rtg-math :nineveh :dirt
-        :temporal-functions)
+        :temporal-functions :cepl.skitter)
   (:import-from :alexandria
                 :symbolicate
                 :with-gensyms))

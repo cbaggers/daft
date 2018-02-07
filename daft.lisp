@@ -58,7 +58,8 @@
           (cepl-context))))
   (clear)
   (update-actors)
-  (swap))
+  (swap)
+  (decay-events))
 
 (def-simple-main-loop daft (:on-start #'init)
   (step-engine))
