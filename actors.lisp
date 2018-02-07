@@ -20,29 +20,56 @@
 
 (defgeneric update (actor))
 
-(defmacro define-actor (name values &body body)
+(defgeneric %change-state (actor new-state))
+
+(defun change-state (new-state)
+  (%change-state *self* new-state))
+
+(defun gen-state-funcs (name states local-var-names)
+  (loop :for (state-name . body) :in states :collect
+     (let ((state-func-name (symb name :- state-name)))
+       `(defun ,state-func-name (self)
+          (symbol-macrolet ((x (x (slot-value self 'pos)))
+                            (y (y (slot-value self 'pos))))
+            (with-slots ,local-var-names self
+              (let ((*self* self))
+                ,@body)))))))
+
+(defmacro define-actor (name values &body states)
+  (assert states)
   (let* ((local-vars (remove-if #'keywordp values
                                 :key #'first))
          (keyword-vars (remove-if-not #'keywordp values
                                       :key #'first))
-         (local-var-names (mapcar #'first local-vars)))
+         (local-var-names (mapcar #'first local-vars))
+         (state-funcs (gen-state-funcs name states local-var-names))
+         (func-names (mapcar #'second state-funcs))
+         (state-names (mapcar #'first states))
+         (default-state (first state-names)))
+    (assert (every #'keywordp state-names))
     (destructuring-bind (&key visual sprite-size)
         (reduce #'append keyword-vars)
       (declare (ignore sprite-size))
       `(progn
          (defclass ,name (actor)
-           ((visual :initform (load-tex ,visual))
+           ((state :initform ,default-state)
+            (visual :initform (load-tex ,visual))
             ,@(loop :for (var-name var-val) :in local-vars :collect
                  `(,var-name
                    :initform ,var-val
                    :initarg ,(intern (symbol-name var-name)
                                      :keyword)))))
          (defmethod update ((self ,name))
-           (symbol-macrolet ((x (x (slot-value self 'pos)))
-                             (y (y (slot-value self 'pos))))
-             (with-slots ,local-var-names self
-               (let ((*self* self))
-                 ,@body))))
+           (with-slots (state) self
+             (case state
+               ,@(loop :for state :in state-names
+                    :for func :in func-names :collect
+                    `(,state (,func self))))))
+         ,@state-funcs
+         (defmethod %change-state ((self ,name) new-state)
+           (assert (member new-state ',state-names))
+           (with-slots (state) self
+             (setf state new-state)))
          (defmethod copy-actor-state ((src ,name))
            (with-slots (next) src
              ,@(loop :for slot :in (append '(pos rot visual)
@@ -52,7 +79,8 @@
                          (slot-value src ',slot)))))
          (push
           (lambda ()
-            (update-all-existing-actors ',name ,visual))
+            (update-all-existing-actors
+             ',name ,visual ',state-names))
           *tasks-for-next-frame*)))))
 
 (defun update-actors ()
@@ -78,11 +106,15 @@
            :sam (slot-value actor 'visual)
            :size size)))
 
-(defun update-all-existing-actors (type-name visual)
+(defun update-all-existing-actors (type-name
+                                   new-visual
+                                   new-valid-states)
   (loop :for a :across *current-actors* :do
-     (when (typep a type-name)
-       (setf (slot-value a 'visual)
-             (load-tex visual)))))
+     (with-slots (visual state) a
+       (when (typep a type-name)
+         (setf visual (load-tex new-visual)))
+       (when (not (find state new-valid-states))
+         (setf state (first new-valid-states))))))
 
 ;;------------------------------------------------------------
 

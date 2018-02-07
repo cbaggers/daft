@@ -31,16 +31,16 @@ all functions etc are relative to self.
 (define-actor ship ((:visual "ship.png")
                     (health 10)
                     (bullet nil))
-  (:normal-mode
+  (:normal-state
    (setf x (mouse-x))
    (when (gamepad-button-a)
      (setf bullet (spawn :bullet (v! 4 7) :speed 2))
-     (change-mode :bullet-mode))
+     (change-state :bullet-state))
    (when (touching-p (actors-in-range 10 :alien-bullet))
      (die)))
 
-  (:bullet-mode
+  (:bullet-state
    (when (touching-p (actors-in-range 10 alien-bullets))
      (die))
    (when (dead bullet)
-     (change-mode :normal-mode))))
+     (change-state :normal-state))))

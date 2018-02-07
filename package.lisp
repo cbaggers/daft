@@ -2,4 +2,7 @@
 
 (defpackage #:daft
   (:use #:cl :cepl :vari :rtg-math :nineveh :dirt
-        :temporal-functions))
+        :temporal-functions)
+  (:import-from :alexandria
+                :symbolicate
+                :with-gensyms))
