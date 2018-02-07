@@ -157,6 +157,10 @@
     (vector-push-extend actor into)
     actor))
 
+(defun strafe (amount)
+  ;; TODO: take rotation into account
+  (incf (x (pos *self*)) amount))
+
 (defun die ()
   (setf (slot-value *self* 'dead) t))
 
