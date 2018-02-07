@@ -118,13 +118,13 @@
                                    new-valid-states
                                    vars)
   (loop :for a :across *current-actors* :do
-     (loop :for (slot-name val) :in vars :do
-        (setf (slot-value a slot-name) val))
      (with-slots (visual state) a
        (when (typep a type-name)
-         (setf visual (load-tex new-visual)))
-       (when (not (find state new-valid-states))
-         (setf state (first new-valid-states))))))
+         (loop :for (slot-name val) :in vars :do
+            (setf (slot-value a slot-name) val))
+         (setf visual (load-tex new-visual))
+         (when (not (find state new-valid-states))
+           (setf state (first new-valid-states)))))))
 
 ;;------------------------------------------------------------
 
