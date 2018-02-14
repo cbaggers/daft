@@ -112,15 +112,16 @@
 (defun update-actors ()
   (let ((res (viewport-resolution (current-viewport)))
         (*spawn-into* *next-actors*))
-    (setf (fill-pointer *next-actors*) 0)
-    (loop :for actor :across *current-actors* :do
-       (copy-actor-state actor)
-       (with-slots (next visual) actor
-         (update next)
-         (unless (slot-value next 'dead)
-           (when visual
-             (draw-actor actor res))
-           (vector-push-extend next *next-actors*))))
+    (with-setf (depth-test-function) nil
+      (setf (fill-pointer *next-actors*) 0)
+      (loop :for actor :across *current-actors* :do
+         (copy-actor-state actor)
+         (with-slots (next visual) actor
+           (update next)
+           (unless (slot-value next 'dead)
+             (when visual
+               (draw-actor actor res))
+             (vector-push-extend next *next-actors*)))))
     (rotatef *current-actors* *next-actors*)))
 
 (defvar *blend-params* (make-blending-params))

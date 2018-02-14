@@ -10,7 +10,8 @@
                :nineveh
                :dirt
                :cepl.skitter.sdl2
-               :temporal-functions)
+               :temporal-functions
+               :with-setf)
   :components ((:file "package")
                (:file "images")
                (:file "daft")
