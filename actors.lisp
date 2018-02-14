@@ -218,4 +218,20 @@
 (defun offscreen-p ()
   nil)
 
+(defun is-dead (actor)
+  (slot-value actor 'dead))
+
+(defun is-alive (actor)
+  (not (is-dead actor)))
+
+(defun angle-between (from-actor to-actor)
+  (with-slots (pos rot) from-actor
+    (degrees
+     (v2:angle-from (v2:from-angle rot)
+                    (v2:- (s~ (slot-value to-actor 'pos) :xy)
+                          (s~ pos :xy))))))
+
+(defun angle-to (actor)
+  (angle-between *self* actor))
+
 ;;------------------------------------------------------------
