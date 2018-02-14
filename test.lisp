@@ -1,5 +1,13 @@
 (in-package :daft)
 
+(define-god ()
+  (:game-starting
+   (spawn 'ship (v! 0 -140))
+   (spawn 'alien (v! 0 200))
+   (change-state :game-running))
+  (:game-running
+   nil))
+
 (define-actor bullet ((:visual "bullet.png")
                       (speed 1))
   (:main
@@ -27,11 +35,3 @@
    (when (and (mouse-button (mouse) mouse.left)
               (funcall fire))
      (spawn 'bullet (v! 0 40)))))
-
-(defun refresh-actors ()
-  (setf *current-actors*
-        (make-array 0 :element-type 'actor :adjustable t
-                    :fill-pointer 0))
-  (spawn! 'ship (v! 0 140))
-  (spawn! 'ship (v! 0 40))
-  (spawn! 'ship (v! 0 -140)))

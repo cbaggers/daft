@@ -27,11 +27,14 @@
 
 (defun gen-state-funcs (name states local-var-names)
   (loop :for (state-name . body) :in states :collect
-     (let ((state-func-name (symb name :- state-name)))
+     (let ((state-func-name (symbolicate name :- state-name)))
        `(defun ,state-func-name (self)
           (with-slots ,local-var-names self
             (let ((*self* self))
               ,@body))))))
+
+(defmacro define-god (values &body states)
+  `(define-actor god ,values ,@states))
 
 (defmacro define-actor (name values &body states)
   (assert states)
@@ -51,7 +54,8 @@
       `(progn
          (defclass ,name (actor)
            ((state :initform ,default-state)
-            (visual :initform (load-tex ,visual))
+            (visual :initform ,(when visual
+                                 `(load-tex ,visual)))
             ,@(loop :for (var-name var-val) :in local-vars :collect
                  `(,var-name
                    :initform ,var-val
@@ -92,10 +96,11 @@
     (setf (fill-pointer *next-actors*) 0)
     (loop :for actor :across *current-actors* :do
        (copy-actor-state actor)
-       (with-slots (next) actor
+       (with-slots (next visual) actor
          (update next)
          (unless (slot-value next 'dead)
-           (draw-actor actor res)
+           (when visual
+             (draw-actor actor res))
            (vector-push-extend next *next-actors*))))
     (rotatef *current-actors* *next-actors*)))
 
@@ -122,7 +127,8 @@
        (when (typep a type-name)
          (loop :for (slot-name val) :in vars :do
             (setf (slot-value a slot-name) val))
-         (setf visual (load-tex new-visual))
+         (setf visual (when new-visual
+                        (load-tex new-visual)))
          (when (not (find state new-valid-states))
            (setf state (first new-valid-states)))))))
 

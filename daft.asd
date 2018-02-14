@@ -15,4 +15,5 @@
                (:file "images")
                (:file "daft")
                (:file "actors")
+               (:file "god")
                (:file "collision")))

@@ -38,12 +38,16 @@
   :vertex (cube-vs g-pnt)
   :fragment (cube-fs :vec2))
 
+(defvar *god* nil)
+
 (defun init ()
   (unless *cube-stream*
     (destructuring-bind (vert-arr index-arr)
         (nineveh.mesh.data.primitives:cube-gpu-arrays)
       (setf *cube-stream*
-            (make-buffer-stream vert-arr :index-array index-arr)))))
+            (make-buffer-stream vert-arr :index-array index-arr))))
+  (unless *god*
+    (setf *god* (spawn! 'god (v! 0 0)))))
 
 (defun now ()
   (/ (get-internal-real-time) 1000f0))
