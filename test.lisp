@@ -1,20 +1,25 @@
 (in-package :daft)
 
-(define-god ()
+(define-god ((spawn-counter (make-stepper (seconds 40)
+                                          (seconds 40))))
   (:game-starting
    (spawn 'ship (v! 0 -140))
-   (spawn 'alien (v! 0 200))
    (change-state :game-running))
   (:game-running
-   nil))
+   (when (funcall spawn-counter)
+     (spawn 'alien (v! 0 200)))))
 
 (define-actor bullet ((:visual "bullet.png")
+                      (fired-by nil)
                       (speed 1))
   (:main
-   (when (or (touching-p 'alien)
-             ;; TODO: WAT! ↓↓↓↓↓↓
-             (> (y (pos *self*)) 300))
-     (die))
+   (let ((touching (touching-p 'alien)))
+     (when (or touching
+               ;; TODO: WAT! ↓↓↓↓↓↓
+               (> (y (slot-value *self* 'pos)) 300))
+       (when (and touching fired-by)
+         (print (angle-between fired-by (first touching))))
+       (die)))
    (move-forward 2)))
 
 (define-actor alien ((:visual "alien.png")
@@ -34,4 +39,5 @@
    (strafe (* 2 (x (mouse-move (mouse)))))
    (when (and (mouse-button (mouse) mouse.left)
               (funcall fire))
-     (spawn 'bullet (v! 0 40)))))
+     (spawn 'bullet (v! 0 40)
+            :fired-by *self*))))
