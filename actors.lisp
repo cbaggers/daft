@@ -209,8 +209,8 @@
   (with-slots (pos rot) *self*
     (setf pos
           (v3:+ pos
-                (v3:*s (v! (sin (radians rot)) (cos (radians rot)) 0)
-                       (float distance 1f0))))))
+                (m3:*v (m3:rotation-z rot)
+                       (v! 0 (float distance 1f0) 0))))))
 
 (defun gamepad-button-a ())
 
