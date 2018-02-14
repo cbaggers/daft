@@ -160,16 +160,22 @@
 
 (defun spawn (actor-kind-name pos
               &rest args &key &allow-other-keys)
-  (%spawn actor-kind-name (slot-value *self* 'pos) pos args
-          *spawn-into*))
+  (with-slots ((parent-pos pos)
+               (parent-rot rot))
+      *self*
+    (%spawn actor-kind-name
+            parent-pos
+            parent-rot
+            pos args
+            *spawn-into*)))
 
 (defun spawn! (actor-kind-name pos
                &rest args &key &allow-other-keys)
-  (%spawn actor-kind-name (v! 0 0 0) pos args
+  (%spawn actor-kind-name (v! 0 0 0) 0f0 pos args
           *current-actors*))
 
-(defun %spawn (actor-kind-name parent-pos pos args
-               into)
+(defun %spawn (actor-kind-name parent-pos parent-rot
+               pos args into)
   (let* ((hack-name (intern (symbol-name actor-kind-name)
                             :daft))
          (actor (init-actor
@@ -182,8 +188,14 @@
                 args)))
     (setf (slot-value actor 'next) next)
     (setf (slot-value next 'next) actor)
+
     (setf (slot-value actor 'pos)
-          (v3:+ parent-pos (v! (x pos) (y pos) 0)))
+          (v3:+ parent-pos
+                (m3:*v (m3:rotation-z parent-rot)
+                       (v! (x pos) (y pos) 0))))
+    (setf (slot-value actor 'rot)
+          parent-rot)
+
     (vector-push-extend actor into)
     actor))
 
