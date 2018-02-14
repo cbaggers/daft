@@ -24,6 +24,6 @@
 (defun %touching-p (a b)
   (let ((r-a (radius a))
         (r-b (radius b)))
-    (< (v2:distance (s~ (pos a) :xy)
-                    (s~ (pos b) :xy))
+    (< (v2:distance (s~ (slot-value a 'pos) :xy)
+                    (s~ (slot-value b 'pos) :xy))
        (+ r-a r-b))))

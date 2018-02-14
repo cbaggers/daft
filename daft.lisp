@@ -53,15 +53,17 @@
   (/ (get-internal-real-time) 1000f0))
 
 (defun step-engine ()
-  (loop :for task :in *tasks-for-next-frame* :do
-     (restart-case (funcall task)
-       (continue () :report "Daft: Skip Task")))
+  (let ((*spawn-into* *current-actors*))
+    (loop :for task :in *tasks-for-next-frame* :do
+       (restart-case (funcall task)
+         (continue () :report "Daft: Skip Task"))))
   (setf *tasks-for-next-frame* nil)
 
   (setf (viewport-resolution (current-viewport))
         (surface-resolution
          (current-surface
           (cepl-context))))
+
   (clear)
   (update-actors)
   (swap)

@@ -1,10 +1,8 @@
 (in-package :daft)
 
 (defclass actor ()
-  ((pos :initform (v! 0 0 0) :initarg :pos
-        :accessor pos)
-   (rot :initform 0f0 :initarg :rot
-        :accessor rot)
+  ((pos :initform (v! 0 0 0) :initarg :pos)
+   (rot :initform 0f0 :initarg :rot)
    (visual :initarg :visual)
    (next :initform nil)
    (dead :initform nil)))
@@ -19,6 +17,7 @@
   (make-array 0 :adjustable t :fill-pointer 0))
 
 (defgeneric update (actor))
+(defgeneric init-actor (actor spawn-args))
 
 (defgeneric %change-state (actor new-state))
 
@@ -43,6 +42,9 @@
          (keyword-vars (remove-if-not #'keywordp values
                                       :key #'first))
          (local-var-names (mapcar #'first local-vars))
+         (local-var-kwds (mapcar (lambda (name)
+                                   (intern (symbol-name name) :keyword))
+                                 local-var-names))
          (state-funcs (gen-state-funcs name states local-var-names))
          (func-names (mapcar #'second state-funcs))
          (state-names (mapcar #'first states))
@@ -56,11 +58,21 @@
            ((state :initform ,default-state)
             (visual :initform ,(when visual
                                  `(load-tex ,visual)))
-            ,@(loop :for (var-name var-val) :in local-vars :collect
-                 `(,var-name
-                   :initform ,var-val
-                   :initarg ,(intern (symbol-name var-name)
-                                     :keyword)))))
+            ,@(loop :for (var-name var-val) :in local-vars
+                 :for kwd :in local-var-kwds :collect
+                 `(,var-name :initarg ,kwd))))
+
+         (defmethod init-actor ((self ,name) spawn-args)
+           (let ((*self* self)
+                 (*spawn-into* *current-actors*)
+                 (spawn-keys
+                  (loop :for x :in spawn-args :by #'cddr
+                     :collect x)))
+             ,@(loop :for (name val) :in local-vars :collect
+                  `(unless (find ',name spawn-keys :test #'string=)
+                     (setf (slot-value self ',name)
+                           ,val))))
+           self)
          (defmethod update ((self ,name))
            (with-slots (state) self
              (case state
@@ -81,18 +93,25 @@
                          (slot-value src ',slot)))))
          (push
           (lambda ()
-            (let ((vars
-                   (list
-                    ,@(loop :for (name val dont-change)
-                         :in local-vars
-                         :unless dont-change
-                         :collect `(list ',name ,val)))))
-              (update-all-existing-actors
-               ',name ,visual ',state-names vars)))
+            (update-all-existing-actors
+             ',name ,visual ',state-names
+             (lambda (actor)
+               (let ((*self* actor))
+                 (list
+                  ,@(loop :for (name val dont-change)
+                       :in local-vars
+                       :unless dont-change
+                       :collect `(list ',name ,val)))))))
           *tasks-for-next-frame*)))))
 
+(defun zero-out-next-actors ()
+  (setf (fill-pointer *next-actors*) 0))
+
+(defvar *spawn-into* nil)
+
 (defun update-actors ()
-  (let ((res (viewport-resolution (current-viewport))))
+  (let ((res (viewport-resolution (current-viewport)))
+        (*spawn-into* *next-actors*))
     (setf (fill-pointer *next-actors*) 0)
     (loop :for actor :across *current-actors* :do
        (copy-actor-state actor)
@@ -107,26 +126,27 @@
 (defvar *blend-params* (make-blending-params))
 
 (defun draw-actor (actor res)
-  (let ((size (resolution
-               (sampler-texture
-                (slot-value actor 'visual)))))
-    (with-blending *blend-params*
-      (map-g #'simple-cube *cube-stream*
-             :screen-height *screen-height-in-game-units*
-             :screen-ratio (/ (x res) (y res))
-             :transform (m4:translation (pos actor))
-             :sam (slot-value actor 'visual)
-             :size size))))
+  (with-slots (visual pos) actor
+    (let ((size (resolution
+                 (sampler-texture visual))))
+      (with-blending *blend-params*
+        (map-g #'simple-cube *cube-stream*
+               :screen-height *screen-height-in-game-units*
+               :screen-ratio (/ (x res) (y res))
+               :transform (m4:translation pos)
+               :sam visual
+               :size size)))))
 
 (defun update-all-existing-actors (type-name
                                    new-visual
                                    new-valid-states
-                                   vars)
+                                   gen-vars)
   (loop :for a :across *current-actors* :do
      (with-slots (visual state) a
        (when (typep a type-name)
-         (loop :for (slot-name val) :in vars :do
-            (setf (slot-value a slot-name) val))
+         (loop :for (slot-name val)
+            :in (funcall gen-vars a)
+            :do (setf (slot-value a slot-name) val))
          (setf visual (when new-visual
                         (load-tex new-visual)))
          (when (not (find state new-valid-states))
@@ -138,8 +158,8 @@
 
 (defun spawn (actor-kind-name pos
               &rest args &key &allow-other-keys)
-  (%spawn actor-kind-name (pos *self*) pos args
-          *next-actors*))
+  (%spawn actor-kind-name (slot-value *self* 'pos) pos args
+          *spawn-into*))
 
 (defun spawn! (actor-kind-name pos
                &rest args &key &allow-other-keys)
@@ -150,23 +170,31 @@
                into)
   (let* ((hack-name (intern (symbol-name actor-kind-name)
                             :daft))
-         (actor (apply #'make-instance hack-name
-                       args))
-         (next (apply #'make-instance hack-name
-                      args)))
+         (actor (init-actor
+                 (apply #'make-instance hack-name
+                        args)
+                 args))
+         (next (init-actor
+                (apply #'make-instance hack-name
+                       args)
+                args)))
     (setf (slot-value actor 'next) next)
     (setf (slot-value next 'next) actor)
-    (setf (pos actor)
+    (setf (slot-value actor 'pos)
           (v3:+ parent-pos (v! (x pos) (y pos) 0)))
     (vector-push-extend actor into)
     actor))
 
 (defun strafe (amount)
   ;; TODO: take rotation into account
-  (incf (x (pos *self*)) amount))
+  (incf (x (slot-value *self* 'pos)) amount))
 
 (defun die ()
-  (setf (slot-value *self* 'dead) t))
+  (with-slots (dead next) *self*
+    (setf dead t)
+    (with-slots (dead) next
+      (setf dead t)))
+  nil)
 
 (defun play-sound (sound-name)
   (declare (ignore sound-name))
