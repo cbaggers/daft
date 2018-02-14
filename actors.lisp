@@ -235,4 +235,12 @@
 (defun angle-to (actor)
   (angle-between *self* actor))
 
+(defun turn-left (angle)
+  (with-slots (rot) *self*
+    (incf rot (radians angle))))
+
+(defun turn-right (angle)
+  (with-slots (rot) *self*
+    (incf rot (radians (- angle)))))
+
 ;;------------------------------------------------------------

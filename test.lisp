@@ -37,6 +37,7 @@
                                         (seconds 0.1))))
   (:main
    (strafe (* 2 (x (mouse-move (mouse)))))
+   (turn-left 0.1)
    (when (and (mouse-button (mouse) mouse.left)
               (funcall fire))
      (spawn 'bullet (v! 0 40)
