@@ -127,14 +127,15 @@
 (defvar *blend-params* (make-blending-params))
 
 (defun draw-actor (actor res)
-  (with-slots (visual pos) actor
+  (with-slots (visual pos rot) actor
     (let ((size (resolution
                  (sampler-texture visual))))
       (with-blending *blend-params*
         (map-g #'simple-cube *cube-stream*
                :screen-height *screen-height-in-game-units*
                :screen-ratio (/ (x res) (y res))
-               :transform (m4:translation pos)
+               :transform (m4:* (m4:translation pos)
+                                (m4:rotation-z rot))
                :sam visual
                :size size)))))
 
