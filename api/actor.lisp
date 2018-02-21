@@ -1,5 +1,7 @@
 (in-package :daft)
 
+(defvar *noisy-spawn* t)
+
 ;;------------------------------------------------------------
 
 (defun spawn (actor-kind-name pos
@@ -13,15 +15,11 @@
             pos args
             *spawn-into*)))
 
-(defun spawn! (actor-kind-name pos
-               &rest args &key &allow-other-keys)
-  (%spawn actor-kind-name (v! 0 0 0) 0f0 pos args
-          *current-actors*))
-
 (defun %spawn (actor-kind-name parent-pos parent-rot
                pos args into)
   (let* ((hack-name (intern (symbol-name actor-kind-name)
                             :daft))
+         (human-name (get-name))
          (actor (init-actor
                  (apply #'make-instance hack-name
                         args)
@@ -32,6 +30,10 @@
                 args)))
     (setf (slot-value actor 'next) next)
     (setf (slot-value next 'next) actor)
+    (setf (slot-value actor 'debug-name) human-name)
+    (setf (slot-value next 'debug-name) human-name)
+    (when *noisy-spawn*
+      (format t "~%; ~a has spawned!" human-name))
 
     (setf (slot-value actor 'pos)
           (v3:+ parent-pos
@@ -43,9 +45,12 @@
     (vector-push-extend actor into)
     actor))
 
-(defun strafe (amount)
-  ;; TODO: take rotation into account
-  (incf (x (slot-value *self* 'pos)) amount))
+(defun strafe (distance)
+  (let ((distance (float distance 0f0)))
+    (with-slots (pos rot) *self*
+      (v3:incf pos
+               (m3:*v (m3:rotation-z (+ rot (radians -90f0)))
+                      (v! 0 (float distance 1f0) 0))))))
 
 (defun die ()
   (with-slots (dead next) *self*
@@ -99,5 +104,33 @@
 (defun turn-right (angle)
   (with-slots (rot) *self*
     (incf rot (radians (- angle)))))
+
+(defun turn-towards (actor angle)
+  (let ((angle-to (angle-to actor)))
+    (if (< angle-to 0)
+        (turn-right angle)
+        (turn-left angle))))
+
+(defun strafe-towards (actor distance)
+  (let* ((dir-to (direction-to actor))
+         (strafe-vec
+          (m3:*v (m3:rotation-z (+ (%rot *self*)
+                                   (radians -90f0)))
+                 (v! 0 1f0 0)))
+         (dp (v3:dot dir-to strafe-vec)))
+    (if (< dp 0)
+        (strafe (- distance))
+        (strafe distance))))
+
+(defun direction-to (actor)
+  (v3:normalize (v3:- (%pos actor) (%pos *self*))))
+
+(defun move-towards (actor distance)
+  (let ((dir (direction-to-actor actor)))
+    (v3:incf (%pos *self*)
+             (v3:*s dir (float distance 0f0)))))
+
+(defun move-away-from (actor distance)
+  (move-towards actor (- distance)))
 
 ;;------------------------------------------------------------

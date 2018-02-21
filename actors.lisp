@@ -3,11 +3,16 @@
 (defvar *self*)
 
 (defclass actor ()
-  ((pos :initform (v! 0 0 0) :initarg :pos)
-   (rot :initform 0f0 :initarg :rot)
+  ((debug-name :reader debug-name)
+   (pos :initform (v! 0 0 0) :initarg :pos :accessor %pos)
+   (rot :initform 0f0 :initarg :rot :accessor %rot)
    (visual :initarg :visual)
    (next :initform nil)
    (dead :initform nil)))
+
+(defmethod print-object ((actor actor) stream)
+  (format stream "#<~a ~a>" (type-of actor)
+          (slot-value actor 'debug-name)))
 
 (defun radius (actor)
   (with-slots (visual) actor
@@ -70,6 +75,7 @@
                  (spawn-keys
                   (loop :for x :in spawn-args :by #'cddr
                      :collect x)))
+             (declare (ignorable spawn-keys))
              ,@(loop :for (name val) :in local-vars :collect
                   `(unless (find ',name spawn-keys :test #'string=)
                      (setf (slot-value self ',name)

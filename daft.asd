@@ -13,9 +13,11 @@
                :temporal-functions
                :with-setf)
   :components ((:file "package")
+               (:file "names")
                (:file "images")
                (:file "daft")
                (:file "actors")
                (:file "god")
                (:file "collision")
+               (:file "api/debug")
                (:file "api/actor")))
