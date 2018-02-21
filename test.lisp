@@ -14,11 +14,12 @@
                       (speed 1))
   (:main
    (let ((touching (touching-p 'alien)))
-     (when (or touching
-               ;; TODO: WAT! ↓↓↓↓↓↓
-               (> (y (slot-value *self* 'pos)) 300))
+     (when (or touching (offscreen-p))
        (die)))
    (move-forward 2)))
+
+(define-actor dead-shuttle ((:visual "shuttle.png"))
+  (:main))
 
 (define-actor alien ((:visual "alien.png")
                      (health 10))

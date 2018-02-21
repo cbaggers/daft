@@ -17,6 +17,7 @@
                (:file "images")
                (:file "daft")
                (:file "actors")
+               (:file "define-actor")
                (:file "god")
                (:file "collision")
                (:file "api/debug")

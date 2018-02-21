@@ -1,13 +1,48 @@
 (in-package :daft)
 
-(defvar *self*)
+;;------------------------------------------------------------
+
+(defclass public-state ()
+  ((pos :initform (v! 0 0 0) :initarg :pos)
+   (rot :initform 0f0 :initarg :rot)))
+
+(defun %pos (actor)
+  (slot-value
+   (if (eq *self* actor)
+       (slot-value actor 'next-public-state)
+       (slot-value actor 'current-public-state))
+   'pos))
+
+(defun (setf %pos) (value actor)
+  (setf (slot-value
+         (if (eq *self* actor)
+             (slot-value actor 'next-public-state)
+             (slot-value actor 'current-public-state))
+         'pos)
+        value))
+
+(defun %rot (actor)
+  (slot-value
+   (if (eq *self* actor)
+       (slot-value actor 'next-public-state)
+       (slot-value actor 'current-public-state))
+   'rot))
+
+(defun (setf %rot) (value actor)
+  (setf (slot-value
+         (if (eq *self* actor)
+             (slot-value actor 'next-public-state)
+             (slot-value actor 'current-public-state))
+         'rot)
+        value))
+
+;;------------------------------------------------------------
 
 (defclass actor ()
-  ((debug-name :reader debug-name)
-   (pos :initform (v! 0 0 0) :initarg :pos :accessor %pos)
-   (rot :initform 0f0 :initarg :rot :accessor %rot)
+  ((debug-name :initform (get-name) :reader debug-name)
+   (current-public-state)
+   (next-public-state)
    (visual :initarg :visual)
-   (next :initform nil)
    (dead :initform nil)))
 
 (defmethod print-object ((actor actor) stream)
@@ -18,10 +53,23 @@
   (with-slots (visual) actor
     (/ (x (resolution (sampler-texture visual))) 2f0)))
 
+;;------------------------------------------------------------
+
+(defvar *self*)
+
 (defvar *current-actors*
   (make-array 0 :adjustable t :fill-pointer 0))
+
 (defvar *next-actors*
   (make-array 0 :adjustable t :fill-pointer 0))
+
+;;------------------------------------------------------------
+
+(defun copy-actor-state (actor)
+  (let ((src (slot-value actor 'current-public-state))
+        (next (slot-value actor 'next-public-state)))
+    (setf (slot-value next 'pos) (slot-value src 'pos))
+    (setf (slot-value next 'rot) (slot-value src 'rot))))
 
 (defgeneric update (actor))
 (defgeneric init-actor (actor spawn-args))
@@ -31,86 +79,8 @@
 (defun change-state (new-state)
   (%change-state *self* new-state))
 
-(defun gen-state-funcs (name states local-var-names)
-  (loop :for (state-name . body) :in states :collect
-     (let ((state-func-name (symbolicate name :- state-name)))
-       `(defun ,state-func-name (self)
-          (with-slots ,local-var-names self
-            (let ((*self* self))
-              ,@body))))))
-
 (defmacro define-god (values &body states)
   `(define-actor god ,values ,@states))
-
-(defmacro define-actor (name values &body states)
-  (assert states)
-  (let* ((local-vars (remove-if #'keywordp values
-                                :key #'first))
-         (keyword-vars (remove-if-not #'keywordp values
-                                      :key #'first))
-         (local-var-names (mapcar #'first local-vars))
-         (local-var-kwds (mapcar (lambda (name)
-                                   (intern (symbol-name name) :keyword))
-                                 local-var-names))
-         (state-funcs (gen-state-funcs name states local-var-names))
-         (func-names (mapcar #'second state-funcs))
-         (state-names (mapcar #'first states))
-         (default-state (first state-names)))
-    (assert (every #'keywordp state-names))
-    (destructuring-bind (&key visual sprite-size)
-        (reduce #'append keyword-vars)
-      (declare (ignore sprite-size))
-      `(progn
-         (defclass ,name (actor)
-           ((state :initform ,default-state)
-            (visual :initform ,(when visual
-                                 `(load-tex ,visual)))
-            ,@(loop :for (var-name var-val) :in local-vars
-                 :for kwd :in local-var-kwds :collect
-                 `(,var-name :initarg ,kwd))))
-
-         (defmethod init-actor ((self ,name) spawn-args)
-           (let ((*self* self)
-                 (*spawn-into* *current-actors*)
-                 (spawn-keys
-                  (loop :for x :in spawn-args :by #'cddr
-                     :collect x)))
-             (declare (ignorable spawn-keys))
-             ,@(loop :for (name val) :in local-vars :collect
-                  `(unless (find ',name spawn-keys :test #'string=)
-                     (setf (slot-value self ',name)
-                           ,val))))
-           self)
-         (defmethod update ((self ,name))
-           (with-slots (state) self
-             (case state
-               ,@(loop :for state :in state-names
-                    :for func :in func-names :collect
-                    `(,state (,func self))))))
-         ,@state-funcs
-         (defmethod %change-state ((self ,name) new-state)
-           (assert (member new-state ',state-names))
-           (with-slots (state) self
-             (setf state new-state)))
-         (defmethod copy-actor-state ((src ,name))
-           (with-slots (next) src
-             ,@(loop :for slot :in (append '(pos rot visual)
-                                           local-var-names)
-                  :collect
-                  `(setf (slot-value next ',slot)
-                         (slot-value src ',slot)))))
-         (push
-          (lambda ()
-            (update-all-existing-actors
-             ',name ,visual ',state-names
-             (lambda (actor)
-               (let ((*self* actor))
-                 (list
-                  ,@(loop :for (name val dont-change)
-                       :in local-vars
-                       :unless dont-change
-                       :collect `(list ',name ,val)))))))
-          *tasks-for-next-frame*)))))
 
 (defun zero-out-next-actors ()
   (setf (fill-pointer *next-actors*) 0))
@@ -124,28 +94,34 @@
       (setf (fill-pointer *next-actors*) 0)
       (loop :for actor :across *current-actors* :do
          (copy-actor-state actor)
-         (with-slots (next visual) actor
-           (update next)
-           (unless (slot-value next 'dead)
-             (when visual
-               (draw-actor actor res))
-             (vector-push-extend next *next-actors*)))))
+         (update actor)
+         (unless (slot-value actor 'dead)
+           (when (slot-value actor 'visual)
+             (draw-actor actor res))
+           (vector-push-extend actor *next-actors*)))
+      (loop :for actor :across *current-actors* :do
+         (with-slots (current-public-state
+                      next-public-state)
+             actor
+           (rotatef current-public-state
+                    next-public-state))))
     (rotatef *current-actors* *next-actors*)))
 
 (defvar *blend-params* (make-blending-params))
 
 (defun draw-actor (actor res)
-  (with-slots (visual pos rot) actor
-    (let ((size (resolution
-                 (sampler-texture visual))))
-      (with-blending *blend-params*
-        (map-g #'simple-cube *cube-stream*
-               :screen-height *screen-height-in-game-units*
-               :screen-ratio (/ (x res) (y res))
-               :transform (m4:* (m4:translation pos)
-                                (m4:rotation-z rot))
-               :sam visual
-               :size size)))))
+  (with-slots (visual current-public-state) actor
+    (with-slots (pos rot) current-public-state
+      (let ((size (resolution
+                   (sampler-texture visual))))
+        (with-blending *blend-params*
+          (map-g #'simple-cube *cube-stream*
+                 :screen-height *screen-height-in-game-units*
+                 :screen-ratio (/ (x res) (y res))
+                 :transform (m4:* (m4:translation pos)
+                                  (m4:rotation-z rot))
+                 :sam visual
+                 :size size))))))
 
 (defun update-all-existing-actors (type-name
                                    new-visual
@@ -161,5 +137,34 @@
                         (load-tex new-visual)))
          (when (not (find state new-valid-states))
            (setf state (first new-valid-states)))))))
+
+;;------------------------------------------------------------
+
+(defun %spawn (actor-kind-name parent-pos parent-rot
+               pos args into)
+  (let* ((hack-name (intern (symbol-name actor-kind-name)
+                            :daft))
+         (actor (init-actor
+                 (apply #'make-instance hack-name
+                        args)
+                 args)))
+
+    (with-slots (current-public-state
+                 next-public-state
+                 debug-name)
+        actor
+      (setf current-public-state
+            (make-instance 'public-state
+                           :pos (v3:+ parent-pos
+                                      (m3:*v (m3:rotation-z parent-rot)
+                                             (v! (x pos) (y pos) 0)))
+                           :rot parent-rot))
+      (setf next-public-state
+            (make-instance 'public-state))
+      (when *noisy-spawn*
+        (format t "~%; ~a has spawned!" debug-name)))
+
+    (vector-push-extend actor into)
+    actor))
 
 ;;------------------------------------------------------------
