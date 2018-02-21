@@ -17,4 +17,5 @@
                (:file "daft")
                (:file "actors")
                (:file "god")
-               (:file "collision")))
+               (:file "collision")
+               (:file "api/actor")))
