@@ -126,7 +126,7 @@
   (v3:normalize (v3:- (%pos actor) (%pos *self*))))
 
 (defun move-towards (actor distance)
-  (let ((dir (direction-to-actor actor)))
+  (let ((dir (direction-to actor)))
     (v3:incf (%pos *self*)
              (v3:*s dir (float distance 0f0)))))
 
