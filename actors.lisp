@@ -43,7 +43,11 @@
    (current-public-state)
    (next-public-state)
    (visual :initarg :visual)
-   (dead :initform nil)))
+   (dead :initform nil)
+   (tile-count :initform '(1 1))
+   (anim-length :initform 1)
+   (anim-frame :initform 0)
+   (size :initform "size-not-known")))
 
 (defmethod print-object ((actor actor) stream)
   (format stream "#<~a ~a>" (type-of actor)
@@ -111,11 +115,21 @@
 
 (defvar *blend-params* (make-blending-params))
 
+(defun calc-uv-mod (actor)
+  (with-slots (tile-count anim-frame) actor
+    (destructuring-bind (tx ty) tile-count
+      (let* ((uv-scale (v! (/ 1f0 tx) (/ 1f0 ty)))
+             (uv-offset
+              (v! (* (mod anim-frame tx) (x uv-scale))
+                  (* (floor (/ anim-frame tx))
+                     (y uv-scale)))))
+        (values uv-scale uv-offset)))))
+
 (defun draw-actor (actor res)
-  (with-slots (visual current-public-state) actor
-    (with-slots (pos rot) current-public-state
-      (let ((size (resolution
-                   (sampler-texture visual))))
+  (multiple-value-bind (uv-scale uv-offset)
+      (calc-uv-mod actor)
+    (with-slots (visual current-public-state size) actor
+      (with-slots (pos rot) current-public-state
         (with-blending *blend-params*
           (map-g #'simple-cube *cube-stream*
                  :screen-height *screen-height-in-game-units*
@@ -123,22 +137,43 @@
                  :transform (m4:* (m4:translation pos)
                                   (m4:rotation-z rot))
                  :sam visual
-                 :size size))))))
+                 :size size
+                 :uv-scale uv-scale
+                 :uv-offset uv-offset))))))
 
 (defun update-all-existing-actors (type-name
                                    new-visual
+                                   new-tile-count
                                    new-valid-states
                                    gen-vars)
-  (loop :for a :across *current-actors* :do
-     (with-slots (visual state) a
-       (when (typep a type-name)
-         (loop :for (slot-name val)
-            :in (funcall gen-vars a)
-            :do (setf (slot-value a slot-name) val))
-         (setf visual (when new-visual
-                        (load-tex new-visual)))
-         (when (not (find state new-valid-states))
-           (setf state (first new-valid-states)))))))
+  (let ((new-len (reduce #'* new-tile-count)))
+    (loop :for a :across *current-actors* :do
+       (with-slots (visual
+                    state
+                    tile-count
+                    anim-length
+                    anim-frame
+                    size)
+           a
+         (when (typep a type-name)
+           (loop :for (slot-name val)
+              :in (funcall gen-vars a)
+              :do (setf (slot-value a slot-name) val))
+           (setf visual (when new-visual
+                          (load-tex new-visual)))
+           (setf size
+                 (if visual
+                     (v2:/ (resolution
+                            (sampler-texture visual))
+                           (v! tile-count))
+                     (v! 0 0)))
+           (setf tile-count new-tile-count
+                 anim-length new-len
+                 anim-frame (if (< anim-frame new-len)
+                                anim-frame
+                                0))
+           (when (not (find state new-valid-states))
+             (setf state (first new-valid-states))))))))
 
 ;;------------------------------------------------------------
 

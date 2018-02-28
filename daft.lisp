@@ -31,8 +31,10 @@
 
 (defun-g cube-fs ((uv :vec2)
                   &uniform
-                  (sam :sampler-2d))
-  (texture sam uv))
+                  (sam :sampler-2d)
+                  (uv-scale :vec2)
+                  (uv-offset :vec2))
+  (texture sam (+ (* uv uv-scale) uv-offset)))
 
 (defpipeline-g simple-cube ()
   :vertex (cube-vs g-pnt)

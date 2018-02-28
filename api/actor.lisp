@@ -94,6 +94,10 @@
                        (gamepad-2d gamepad analog-id)))
   nil)
 
+(defun next-frame ()
+  (with-slots (anim-frame anim-length) *self*
+    (setf anim-frame (mod (+ anim-frame 1) anim-length))))
+
 ;;------------------------------------------------------------
 
 (defun play-sound (sound-name)

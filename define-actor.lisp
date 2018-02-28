@@ -25,52 +25,62 @@
          (state-names (mapcar #'first states))
          (default-state (first state-names)))
     (assert (every #'keywordp state-names))
-    (destructuring-bind (&key visual sprite-size)
+    (destructuring-bind (&key visual tile-count)
         (reduce #'append keyword-vars)
-      (declare (ignore sprite-size))
-      `(progn
-         (defclass ,name (actor)
-           ((state :initform ,default-state)
-            (visual :initform ,(when visual
-                                 `(load-tex ,visual)))
-            ,@(loop :for (var-name var-val) :in local-vars
-                 :for kwd :in local-var-kwds :collect
-                 `(,var-name :initarg ,kwd))))
+      (let ((tile-count (if (numberp tile-count)
+                            (list tile-count 1)
+                            (or tile-count '(1 1)))))
+        (assert (and (listp tile-count) (= 2 (length tile-count))))
+        `(progn
+           (defclass ,name (actor)
+             ((state :initform ,default-state)
+              (visual :initform ,(when visual
+                                   `(load-tex ,visual)))
+              (tile-count :initform ',tile-count)
+              (anim-length :initform ,(reduce #'* tile-count))
+              (anim-frame :initform 0)
+              ,@(loop :for (var-name var-val) :in local-vars
+                   :for kwd :in local-var-kwds :collect
+                   `(,var-name :initarg ,kwd))))
 
-         (defmethod init-actor ((self ,name) spawn-args)
-           (let ((*self* self)
-                 (*spawn-into* *current-actors*)
-                 (spawn-keys
-                  (loop :for x :in spawn-args :by #'cddr
-                     :collect x)))
-             (declare (ignorable spawn-keys))
-             ,@(loop :for (name val) :in local-vars :collect
-                  `(unless (find ',name spawn-keys :test #'string=)
-                     (setf (slot-value self ',name)
-                           ,val))))
-           self)
-         (defmethod update ((self ,name))
-           (with-slots (state) self
-             (case state
-               ,@(loop :for state :in state-names
-                    :for func :in func-names :collect
-                    `(,state (,func self))))))
-         ,@state-funcs
-         (defmethod %change-state ((self ,name) new-state)
-           (assert (member new-state ',state-names))
-           (with-slots (state) self
-             (setf state new-state)))
-         (push
-          (lambda ()
-            (update-all-existing-actors
-             ',name ,visual ',state-names
-             (lambda (actor)
-               (let ((*self* actor))
-                 (list
-                  ,@(loop :for (name val dont-change)
-                       :in local-vars
-                       :unless dont-change
-                       :collect `(list ',name ,val)))))))
-          *tasks-for-next-frame*)))))
+           (defmethod init-actor ((self ,name) spawn-args)
+             (let ((*self* self)
+                   (*spawn-into* *current-actors*)
+                   (spawn-keys
+                    (loop :for x :in spawn-args :by #'cddr
+                       :collect x)))
+               (declare (ignorable spawn-keys))
+               (with-slots (visual size tile-count) self
+                 (setf size
+                       (v2:/ (resolution (sampler-texture visual))
+                             (v! tile-count))))
+               ,@(loop :for (name val) :in local-vars :collect
+                    `(unless (find ',name spawn-keys :test #'string=)
+                       (setf (slot-value self ',name)
+                             ,val))))
+             self)
+           (defmethod update ((self ,name))
+             (with-slots (state) self
+               (case state
+                 ,@(loop :for state :in state-names
+                      :for func :in func-names :collect
+                      `(,state (,func self))))))
+           ,@state-funcs
+           (defmethod %change-state ((self ,name) new-state)
+             (assert (member new-state ',state-names))
+             (with-slots (state) self
+               (setf state new-state)))
+           (push
+            (lambda ()
+              (update-all-existing-actors
+               ',name ,visual ',tile-count ',state-names
+               (lambda (actor)
+                 (let ((*self* actor))
+                   (list
+                    ,@(loop :for (name val dont-change)
+                         :in local-vars
+                         :unless dont-change
+                         :collect `(list ',name ,val)))))))
+            *tasks-for-next-frame*))))))
 
 ;;------------------------------------------------------------
