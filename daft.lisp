@@ -40,7 +40,10 @@
 
 (defvar *god* nil)
 
+(defparameter *sdl2-pads* (make-array 10 :initial-element nil))
+
 (defun init ()
+  (init-pads '(0))
   (unless *cube-stream*
     (destructuring-bind (vert-arr index-arr)
         (nineveh.mesh.data.primitives:cube-gpu-arrays)
@@ -48,6 +51,13 @@
             (make-buffer-stream vert-arr :index-array index-arr))))
   (unless *god*
     (setf *god* (spawn! 'god (v! 0 0)))))
+
+(defun init-pads (ids)
+  (loop :for id :in ids :do
+     (unless (aref *sdl2-pads* id)
+       (setf (aref *sdl2-pads* id)
+             (sdl2:game-controller-open id))))
+  (skitter.sdl2:enable-background-joystick-events))
 
 (defun now ()
   (/ (get-internal-real-time) 1000f0))
@@ -69,5 +79,32 @@
   (swap)
   (decay-events))
 
-(def-simple-main-loop daft (:on-start #'init)
-  (step-engine))
+(defvar *daft-frame-counter* 0)
+
+(defun daft (nineveh::action &optional nineveh::frames)
+  (ecase nineveh::action
+    (:start
+     (if (= *daft-frame-counter* 0)
+         (progn
+           (setf *daft-frame-counter* (or nineveh::frames -1))
+           (format t "~%- starting ~a -" 'daft)
+           (unwind-protect
+                (progn
+                  (when (cepl.lifecycle:uninitialized-p) (repl))
+                  (let ((nineveh::on-start #'init))
+                    (when nineveh::on-start (funcall nineveh::on-start)))
+                  (loop :until (= *daft-frame-counter* 0) :do
+                     (decf *daft-frame-counter* 1)
+                     (livesupport:continuable
+                       (step-host))
+                     (livesupport:continuable
+                       (tiny-time-manager:update))
+                     (livesupport:continuable
+                       (step-engine))))
+             (setf *daft-frame-counter* 0)
+             (format t "~%~%- stopping ~a -~%" 'daft)))
+         (format t "~%~%- ~a is already running -~%" 'daft)))
+    (:stop (setf *daft-frame-counter* (max 0 (or nineveh::frames 0))))))
+
+
+;;

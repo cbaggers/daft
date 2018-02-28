@@ -32,11 +32,20 @@
 
 (define-actor ship ((:visual "shuttle2.png")
                     (start-time (now) t)
+                    (speed 0f0)
+                    (max-speed 10f0)
                     (fire (make-stepper (seconds 0.1)
                                         (seconds 0.1))))
   (:main
-   (strafe (* 2 (x (mouse-move (mouse)))))
-   (when (and (mouse-button (mouse) mouse.left)
+   (set-angle-from-analog 0)
+   (when (and (or (mouse-button (mouse) mouse.left)
+                  (gamepad-button (gamepad) 0))
               (funcall fire))
      (spawn 'bullet (v! 0 40)
-            :fired-by *self*))))
+            :fired-by *self*))
+   (setf speed
+         (clamp 0f0 max-speed
+                (+ (* speed 0.99)
+                   (* (gamepad-1d (gamepad) 1)
+                      0.2))))
+   (move-forward speed)))

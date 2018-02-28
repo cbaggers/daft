@@ -11,7 +11,8 @@
                :dirt
                :cepl.skitter.sdl2
                :temporal-functions
-               :with-setf)
+               :with-setf
+               :sdl2-game-controller-db)
   :components ((:file "package")
                (:file "names")
                (:file "images")

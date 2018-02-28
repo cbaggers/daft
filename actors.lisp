@@ -99,6 +99,8 @@
            (when (slot-value actor 'visual)
              (draw-actor actor res))
            (vector-push-extend actor *next-actors*)))
+      (livesupport:continuable
+        (livesupport:update-repl-link))
       (loop :for actor :across *current-actors* :do
          (with-slots (current-public-state
                       next-public-state)
