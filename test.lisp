@@ -18,8 +18,10 @@
        (die)))
    (move-forward 2)))
 
-(define-actor dead-shuttle ((:visual "shuttle.png"))
-  (:main))
+(define-actor dead-shuttle ((:visual "arfy-walking6.png")
+                            (:tile-count (4 4)))
+  (:main
+   (advance-frame 0.1)))
 
 (define-actor alien ((:visual "alien.png")
                      (health 10))
@@ -39,13 +41,12 @@
   (:main
    (set-angle-from-analog 0)
    (when (and (or (mouse-button (mouse) mouse.left)
-                  (gamepad-button (gamepad) 0))
+                  (pad-button 0))
               (funcall fire))
      (spawn 'bullet (v! 0 40)
             :fired-by *self*))
    (setf speed
          (clamp 0f0 max-speed
                 (+ (* speed 0.99)
-                   (* (gamepad-1d (gamepad) 1)
-                      0.2))))
+                   (* (pad-1d 1) 0.2))))
    (move-forward speed)))
