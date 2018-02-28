@@ -96,7 +96,17 @@
 
 (defun next-frame ()
   (with-slots (anim-frame anim-length) *self*
-    (setf anim-frame (mod (+ anim-frame 1) anim-length))))
+    (setf anim-frame
+          (float (mod (+ (floor anim-frame) 1)
+                      anim-length)
+                 0f0))))
+
+(defun advance-frame (amount)
+  (with-slots (anim-frame anim-length) *self*
+    (setf anim-frame
+          (float (mod (+ anim-frame amount)
+                      anim-length)
+                 0f0))))
 
 ;;------------------------------------------------------------
 

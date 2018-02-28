@@ -117,13 +117,14 @@
 
 (defun calc-uv-mod (actor)
   (with-slots (tile-count anim-frame) actor
-    (destructuring-bind (tx ty) tile-count
-      (let* ((uv-scale (v! (/ 1f0 tx) (/ 1f0 ty)))
-             (uv-offset
-              (v! (* (mod anim-frame tx) (x uv-scale))
-                  (* (floor (/ anim-frame tx))
-                     (y uv-scale)))))
-        (values uv-scale uv-offset)))))
+    (let ((anim-frame (floor anim-frame)))
+      (destructuring-bind (tx ty) tile-count
+        (let* ((uv-scale (v! (/ 1f0 tx) (/ 1f0 ty)))
+               (uv-offset
+                (v! (* (mod anim-frame tx) (x uv-scale))
+                    (* (floor (/ anim-frame tx))
+                       (y uv-scale)))))
+          (values uv-scale uv-offset))))))
 
 (defun draw-actor (actor res)
   (multiple-value-bind (uv-scale uv-offset)

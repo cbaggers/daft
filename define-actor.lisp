@@ -38,7 +38,7 @@
                                    `(load-tex ,visual)))
               (tile-count :initform ',tile-count)
               (anim-length :initform ,(reduce #'* tile-count))
-              (anim-frame :initform 0)
+              (anim-frame :initform 0f0)
               ,@(loop :for (var-name var-val) :in local-vars
                    :for kwd :in local-var-kwds :collect
                    `(,var-name :initarg ,kwd))))
