@@ -105,19 +105,35 @@
                &optional (gamepad (gamepad 0)))
   (gamepad-1d gamepad 1d-id))
 
-(defun next-frame ()
-  (with-slots (anim-frame anim-length) *self*
-    (setf anim-frame
-          (float (mod (+ (floor anim-frame) 1)
-                      anim-length)
-                 0f0))))
+(defun next-frame (&optional range)
+  (let ((start-frame (if range
+                         (first range)
+                         0))
+        (anim-length (if range
+                         (second range)
+                         (slot-value *self* 'anim-length))))
+    (with-slots (anim-frame) *self*
+      (let ((frame (- anim-frame start-frame)))
+        (setf anim-frame
+              (float (+ (mod (+ (floor frame) 1)
+                             anim-length)
+                        start-frame)
+                     0f0))))))
 
-(defun advance-frame (amount)
-  (with-slots (anim-frame anim-length) *self*
-    (setf anim-frame
-          (float (mod (+ anim-frame amount)
-                      anim-length)
-                 0f0))))
+(defun advance-frame (amount &optional range)
+  (let ((start-frame (if range
+                         (first range)
+                         0))
+        (anim-length (if range
+                         (second range)
+                         (slot-value *self* 'anim-length))))
+    (with-slots (anim-frame) *self*
+      (let ((frame (- anim-frame start-frame)))
+        (setf anim-frame
+              (float (+ (mod (+ frame amount)
+                             anim-length)
+                        start-frame)
+                     0f0))))))
 
 ;;------------------------------------------------------------
 

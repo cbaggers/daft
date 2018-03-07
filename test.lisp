@@ -1,13 +1,14 @@
 (in-package :daft)
 
-(define-god ((spawn-counter (make-stepper (seconds 40)
-                                          (seconds 40))))
+(define-god ((spawn-counter (make-stepper (seconds 400)
+                                          (seconds 400))))
   (:game-starting
    (spawn 'ship (v! 0 -140))
    (change-state :game-running))
   (:game-running
-   (when (funcall spawn-counter)
-     (spawn 'alien (v! 0 200)))))
+   ;; (when (funcall spawn-counter)
+   ;;   (spawn 'alien (v! 0 200)))
+   ))
 
 (define-actor bullet ((:visual "bullet.png")
                       (fired-by nil)
@@ -21,7 +22,9 @@
 (define-actor dead-shuttle ((:visual "arfy-walking6.png")
                             (:tile-count (4 4)))
   (:main
-   (advance-frame 0.1)))
+   (advance-frame 0.1 '(0 4))
+   ;;(next-frame)
+   ))
 
 (define-actor alien ((:visual "alien.png")
                      (health 10))
