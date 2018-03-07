@@ -12,7 +12,8 @@
                :cepl.skitter.sdl2
                :temporal-functions
                :with-setf
-               :sdl2-game-controller-db)
+               :sdl2-game-controller-db
+               :alexandria)
   :components ((:file "package")
                (:file "names")
                (:file "images")

@@ -1,5 +1,4 @@
 (in-package :daft)
-
 ;;------------------------------------------------------------
 
 (defclass public-state ()
@@ -60,12 +59,18 @@
 ;;------------------------------------------------------------
 
 (defvar *self*)
+(defvar *actors* (make-hash-table))
 
-(defvar *current-actors*
-  (make-array 0 :adjustable t :fill-pointer 0))
+(defstruct actors
+  (current (make-array 0 :adjustable t :fill-pointer 0)
+           :type (array t (*)))
+  (next (make-array 0 :adjustable t :fill-pointer 0)
+        :type (array t (*))))
 
-(defvar *next-actors*
-  (make-array 0 :adjustable t :fill-pointer 0))
+(defun get-actor-arrays (type)
+  (or (gethash type *actors*)
+      (setf (gethash type *actors*)
+            (make-actors))))
 
 ;;------------------------------------------------------------
 
@@ -86,32 +91,37 @@
 (defmacro define-god (values &body states)
   `(define-actor god ,values ,@states))
 
-(defun zero-out-next-actors ()
-  (setf (fill-pointer *next-actors*) 0))
-
-(defvar *spawn-into* nil)
-
 (defun update-actors ()
-  (let ((res (viewport-resolution (current-viewport)))
-        (*spawn-into* *next-actors*))
+  (unless *god*
+    (setf *god* (spawn! 'god (v! 0 0))))
+  (let ((res (viewport-resolution (current-viewport))))
     (with-setf (depth-test-function) nil
-      (setf (fill-pointer *next-actors*) 0)
-      (loop :for actor :across *current-actors* :do
-         (copy-actor-state actor)
-         (update actor)
-         (unless (slot-value actor 'dead)
-           (when (slot-value actor 'visual)
-             (draw-actor actor res))
-           (vector-push-extend actor *next-actors*)))
+
+      (loop :for actors being the hash-values of *actors* :do
+         (setf (fill-pointer (actors-next actors)) 0)
+         (loop :for actor :across (actors-current actors) :do
+            (copy-actor-state actor)
+            (update actor)
+            (unless (slot-value actor 'dead)
+              (when (slot-value actor 'visual)
+                (draw-actor actor res))
+              (vector-push-extend
+               actor (actors-next actors)))))
       (livesupport:continuable
         (livesupport:update-repl-link))
-      (loop :for actor :across *current-actors* :do
-         (with-slots (current-public-state
-                      next-public-state)
-             actor
-           (rotatef current-public-state
-                    next-public-state))))
-    (rotatef *current-actors* *next-actors*)))
+      (loop :for task :in *tasks-for-next-frame* :do
+         (restart-case (funcall task)
+           (continue () :report "Daft: Skip Task")))
+      (setf *tasks-for-next-frame* nil)
+      (loop :for actors being the hash-values of *actors* :do
+         (loop :for actor :across (actors-current actors) :do
+            (with-slots (current-public-state
+                         next-public-state)
+                actor
+              (rotatef current-public-state
+                       next-public-state)))
+         (rotatef (actors-current actors)
+                  (actors-next actors))))))
 
 (defvar *blend-params* (make-blending-params))
 
@@ -126,6 +136,21 @@
                        (y uv-scale)))))
           (values uv-scale uv-offset))))))
 
+(defvar *max-actor-count* 40000)
+(defvar *per-actor-data* nil)
+
+(defstruct-g per-actor-data
+  (transform :mat4)
+  (size :vec2)
+  (uv-scale :vec2)
+  (uv-offset :vec2))
+
+(defun init-actor-data ()
+  (unless *per-actor-data*
+    (setf *per-actor-data*
+          (make-gpu-array nil :element-type 'per-actor-data
+                          :dimensions *max-actor-count*))))
+
 (defun draw-actor (actor res)
   (multiple-value-bind (uv-scale uv-offset)
       (calc-uv-mod actor)
@@ -135,9 +160,10 @@
           (map-g #'simple-cube *cube-stream*
                  :screen-height *screen-height-in-game-units*
                  :screen-ratio (/ (x res) (y res))
+
+                 :sam visual
                  :transform (m4:* (m4:translation pos)
                                   (m4:rotation-z rot))
-                 :sam visual
                  :size size
                  :uv-scale uv-scale
                  :uv-offset uv-offset))))))
@@ -147,8 +173,9 @@
                                    new-tile-count
                                    new-valid-states
                                    gen-vars)
-  (let ((new-len (reduce #'* new-tile-count)))
-    (loop :for a :across *current-actors* :do
+  (let ((new-len (reduce #'* new-tile-count))
+        (actors (get-actor-arrays type-name)))
+    (loop :for a :across (actors-current actors) :do
        (with-slots (visual
                     state
                     tile-count
@@ -156,30 +183,29 @@
                     anim-frame
                     size)
            a
-         (when (typep a type-name)
-           (loop :for (slot-name val)
-              :in (funcall gen-vars a)
-              :do (setf (slot-value a slot-name) val))
-           (setf visual (when new-visual
-                          (load-tex new-visual)))
-           (setf size
-                 (if visual
-                     (v2:/ (resolution
-                            (sampler-texture visual))
-                           (v! tile-count))
-                     (v! 0 0)))
-           (setf tile-count new-tile-count
-                 anim-length new-len
-                 anim-frame (if (< anim-frame new-len)
-                                anim-frame
-                                0))
-           (when (not (find state new-valid-states))
-             (setf state (first new-valid-states))))))))
+         (loop :for (slot-name val)
+            :in (funcall gen-vars a)
+            :do (setf (slot-value a slot-name) val))
+         (setf visual (when new-visual
+                        (load-tex new-visual)))
+         (setf size
+               (if visual
+                   (v2:/ (resolution
+                          (sampler-texture visual))
+                         (v! tile-count))
+                   (v! 0 0)))
+         (setf tile-count new-tile-count
+               anim-length new-len
+               anim-frame (if (< anim-frame new-len)
+                              anim-frame
+                              0))
+         (when (not (find state new-valid-states))
+           (setf state (first new-valid-states)))))))
 
 ;;------------------------------------------------------------
 
 (defun %spawn (actor-kind-name parent-pos parent-rot
-               pos args into)
+               pos args)
   (let* ((hack-name (intern (symbol-name actor-kind-name)
                             :daft))
          (actor (init-actor
@@ -202,7 +228,8 @@
       (when *noisy-spawn*
         (format t "~%; ~a has spawned!" debug-name)))
 
-    (vector-push-extend actor into)
+    (let ((actors (get-actor-arrays actor-kind-name)))
+      (vector-push-extend actor (actors-next actors)))
     actor))
 
 ;;------------------------------------------------------------

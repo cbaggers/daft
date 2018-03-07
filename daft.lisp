@@ -51,9 +51,7 @@
     (destructuring-bind (vert-arr index-arr)
         (nineveh.mesh.data.primitives:cube-gpu-arrays)
       (setf *cube-stream*
-            (make-buffer-stream vert-arr :index-array index-arr))))
-  (unless *god*
-    (setf *god* (spawn! 'god (v! 0 0)))))
+            (make-buffer-stream vert-arr :index-array index-arr)))))
 
 (defun init-pads (ids)
   (setf *sdl2-pads*  (make-array 10 :initial-element nil))
@@ -68,12 +66,6 @@
   (/ (get-internal-real-time) 1000f0))
 
 (defun step-engine ()
-  (let ((*spawn-into* *current-actors*))
-    (loop :for task :in *tasks-for-next-frame* :do
-       (restart-case (funcall task)
-         (continue () :report "Daft: Skip Task"))))
-  (setf *tasks-for-next-frame* nil)
-
   (setf (viewport-resolution (current-viewport))
         (surface-resolution
          (current-surface

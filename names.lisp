@@ -2004,4 +2004,5 @@
     celina))
 
 (defun get-name ()
-  (pop *names*))
+  (or (pop *names*)
+      (gensym)))

@@ -1,55 +1,33 @@
 (in-package :daft)
 
-(define-god ((spawn-counter (make-stepper (seconds 400)
-                                          (seconds 400))))
-  (:game-starting
-   (spawn 'ship (v! 0 -140))
-   (change-state :game-running))
-  (:game-running
-   ;; (when (funcall spawn-counter)
-   ;;   (spawn 'alien (v! 0 200)))
-   ))
+(defvar *stepper*
+  (make-stepper (seconds 1f0)))
+(defvar *wip* 0)
+(defvar *fps* 0)
 
-(define-actor bullet ((:visual "bullet.png")
-                      (fired-by nil)
-                      (speed 1))
-  (:main
-   (let ((touching (touching-p 'alien)))
-     (when (or touching (offscreen-p))
-       (die)))
-   (move-forward 2)))
 
-(define-actor dead-shuttle ((:visual "arfy-walking6.png")
-                            (:tile-count (4 4)))
+(define-god ()
   (:main
-   (advance-frame 0.1 '(0 4))
-   ;;(next-frame)
-   ))
+   (incf *wip*)
+   (when (funcall *stepper*)
+     (setf *fps* *wip*
+           *wip* 0))))
 
-(define-actor alien ((:visual "alien.png")
-                     (health 10))
-  (:main
-   (strafe (* (sin (now)) 2))
-   (when (touching-p 'bullet)
-     (decf health)
-     (when (<= health 0)
-       (die)))))
 
-(define-actor ship ((:visual "shuttle2.png")
-                    (start-time (now) t)
-                    (speed 0f0)
-                    (max-speed 10f0)
-                    (fire (make-stepper (seconds 0.1)
-                                        (seconds 0.1))))
+(define-actor foo ((:visual "shuttle.png")
+                   (dir nil t))
   (:main
-   (set-angle-from-analog 0)
-   (when (and (or (mouse-button (mouse) mouse.left)
-                  (pad-button 0))
-              (funcall fire))
-     (spawn 'bullet (v! 0 40)
-            :fired-by *self*))
-   (setf speed
-         (clamp 0f0 max-speed
-                (+ (* speed 0.99)
-                   (* (pad-1d 1) 0.2))))
-   (move-forward speed)))
+   (setf (%pos *self*)
+         (v3:*s (v! dir 0f0)
+                (* (sin (* (now) 0.1)) 300)))))
+
+
+(defun hacky-test ()
+  (loop :for i :below 3000 :do
+     (let* ((pos (v! (- (random 300f0) 150f0)
+                  (- (random 300f0) 150f0)))
+            (dir (v2:normalize (v2:negate pos))))
+       (spawn! 'foo pos :dir dir))))
+
+(defun hacky-kill ()
+  (clrhash *actors*))

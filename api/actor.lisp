@@ -9,8 +9,7 @@
   (%spawn actor-kind-name
           (%pos *self*)
           (%rot *self*)
-          pos args
-          *spawn-into*))
+          pos args))
 
 (defun strafe (distance)
   (let ((distance (float distance 0f0)))

@@ -45,7 +45,6 @@
 
            (defmethod init-actor ((self ,name) spawn-args)
              (let ((*self* self)
-                   (*spawn-into* *current-actors*)
                    (spawn-keys
                     (loop :for x :in spawn-args :by #'cddr
                        :collect x)))
