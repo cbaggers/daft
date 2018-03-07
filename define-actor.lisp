@@ -51,9 +51,10 @@
                        :collect x)))
                (declare (ignorable spawn-keys))
                (with-slots (visual size tile-count) self
-                 (setf size
-                       (v2:/ (resolution (sampler-texture visual))
-                             (v! tile-count))))
+                 (when visual
+                   (setf size
+                         (v2:/ (resolution (sampler-texture visual))
+                               (v! tile-count)))))
                ,@(loop :for (name val) :in local-vars :collect
                     `(unless (find ',name spawn-keys :test #'string=)
                        (setf (slot-value self ',name)
