@@ -42,10 +42,11 @@
 
 (defvar *god* nil)
 
-(defparameter *sdl2-pads* (make-array 10 :initial-element nil))
+(defvar *sdl2-pads* nil)
 
 (defun init ()
-  (init-pads '(0))
+  (unless *sdl2-pads*
+    (init-pads '(0)))
   (unless *cube-stream*
     (destructuring-bind (vert-arr index-arr)
         (nineveh.mesh.data.primitives:cube-gpu-arrays)
@@ -55,6 +56,8 @@
     (setf *god* (spawn! 'god (v! 0 0)))))
 
 (defun init-pads (ids)
+  (setf *sdl2-pads*  (make-array 10 :initial-element nil))
+  (sdl2-game-controller-db:load-db)
   (loop :for id :in ids :do
      (unless (aref *sdl2-pads* id)
        (setf (aref *sdl2-pads* id)
