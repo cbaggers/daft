@@ -88,38 +88,52 @@
 (defmacro define-god (values &body states)
   `(define-actor god ,values ,@states))
 
+(defvar *stepper*
+  (make-stepper (seconds 1f0)))
+(defvar *wip* 0)
+(defvar *fps* 0)
+
 (defun update-actors ()
   (let ((res (viewport-resolution (current-viewport))))
     (with-setf (depth-test-function) nil
-
+      (incf *wip*)
+      (when (funcall *stepper*)
+        (setf *fps* *wip*
+              *wip* 0))
       (loop :for actors being the hash-values of *actors* :do
-         (setf (fill-pointer (actors-next actors)) 0)
-         (loop
-            :for actor :across (actors-current actors)
-            :do
-            (copy-actor-state actor)
-            (update actor)
-            (unless (slot-value actor 'dead)
-              (vector-push-extend
-               actor (actors-next actors))))
+         (let* ((cur-actors (actors-current actors))
+                (c-arr *per-actor-c-data*)
+                (count 0))
+           (setf (fill-pointer (actors-next actors)) 0)
+           (loop
+              :for actor :across cur-actors
+              :do
+              (copy-actor-state actor)
+              (update actor)
+              (unless (slot-value actor 'dead)
+                (vector-push-extend
+                 actor (actors-next actors))))
+           ;; --
 
-         (let ((cur-actors (actors-current actors))
-               (count 0))
-           (when (> (length cur-actors) 0)
-             ;; copy actor data to gpu-array
-             (let ((c-arr *per-actor-c-data*))
-               (loop
-                  :for actor :across cur-actors
-                  :do
-                  (unless (slot-value actor 'dead)
-                    (write-actor-data actor c-arr count)
-                    (incf count)))
-               (push-g (subseq-c c-arr 0 count)
-                       (subseq-g *per-actor-data* 0 count)))
+           (loop
+              :for actor :across cur-actors
+              :do
+              (unless (slot-value actor 'dead)
+                (write-actor-data actor c-arr count)
+                (incf count)))
+           (when (> count 0)
+             ;; =====================
+             ;; this isnt the problem
+             ;; =====================
+             (push-g (subseq-c c-arr 0 count)
+                     (subseq-g *per-actor-data* 0 count))
              ;; draw 'count' instances of actor
-             (draw-instanced-actors count (aref cur-actors 0) res))))
+             (draw-instanced-actors count
+                                    (aref cur-actors 0)
+                                    res))))
       (livesupport:continuable
         (livesupport:update-repl-link))
+      ;; --
       (unless *god*
         (setf *god* (spawn! 'god (v! 0 0))))
       (loop :for task :in *tasks-for-next-frame* :do
@@ -136,41 +150,27 @@
          (rotatef (actors-current actors)
                   (actors-next actors))))))
 
-(defun calc-uv-mod (actor)
-  (with-slots (tile-count anim-frame) actor
-    (let ((anim-frame (floor anim-frame)))
-      (destructuring-bind (tx ty) tile-count
-        (let* ((uv-scale (v! (/ 1f0 tx) (/ 1f0 ty)))
-               (uv-offset
-                (v! (* (mod anim-frame tx) (x uv-scale))
-                    (* (floor (/ anim-frame tx))
-                       (y uv-scale)))))
-          (values uv-scale uv-offset))))))
-
 (defun write-actor-data (actor c-array index)
-  (multiple-value-bind (uv-scale uv-offset) (calc-uv-mod actor)
-    (with-slots (visual current-public-state size) actor
+  (let ((c-actor (aref-c c-array index)))
+    (with-slots (current-public-state size anim-frame) actor
       (with-slots (pos rot) current-public-state
-        (let ((c-actor (aref-c c-array index)))
-          (setf (per-actor-data-transform c-actor)
-                (m4:* (m4:translation pos)
-                      (m4:rotation-z rot)))
-          (setf (per-actor-data-size c-actor)
-                size)
-          (setf (per-actor-data-uv-scale c-actor)
-                uv-scale)
-          (setf (per-actor-data-uv-offset c-actor)
-                uv-offset))))))
+        (setf (per-actor-data-pos c-actor) pos)
+        (setf (per-actor-data-rot c-actor) rot)
+        (setf (per-actor-data-size c-actor) size)
+        (setf (per-actor-data-anim-frame c-actor) anim-frame)))))
 
 (defun draw-instanced-actors (count actor res)
-  (with-slots (visual) actor
-    (with-blending *blend-params*
-      (with-instances count
-        (map-g #'instanced-cube *instanced-cube-stream*
-               :screen-height *screen-height-in-game-units*
-               :screen-ratio (/ (x res) (y res))
+  (with-slots (visual tile-count) actor
+    (destructuring-bind (tx ty) tile-count
+      (with-blending *blend-params*
+        (with-instances count
+          (map-g #'instanced-cube *instanced-cube-stream*
+                 :screen-height *screen-height-in-game-units*
+                 :screen-ratio (/ (x res) (y res))
 
-               :sam visual)))))
+                 :sam visual
+                 :tile-count-x tx
+                 :tile-count-y ty))))))
 
 (defun update-all-existing-actors (type-name
                                    new-visual

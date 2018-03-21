@@ -1,18 +1,6 @@
 (in-package :daft)
 
-(defvar *stepper*
-  (make-stepper (seconds 1f0)))
-(defvar *wip* 0)
-(defvar *fps* 0)
-
-
-(define-god ()
-  (:main
-   (incf *wip*)
-   (when (funcall *stepper*)
-     (setf *fps* *wip*
-           *wip* 0))))
-
+(define-god () (:main))
 
 (define-actor foo ((:visual "shuttle.png")
                    (dir nil t))
