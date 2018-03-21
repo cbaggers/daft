@@ -1,4 +1,5 @@
 (in-package :daft)
+
 ;;------------------------------------------------------------
 
 (defclass public-state ()
@@ -101,10 +102,11 @@
         (setf *fps* *wip*
               *wip* 0))
       (loop :for actors being the hash-values of *actors* :do
+         (setf (fill-pointer (actors-next actors)) 0))
+      (loop :for actors being the hash-values of *actors* :do
          (let* ((cur-actors (actors-current actors))
                 (c-arr *per-actor-c-data*)
                 (count 0))
-           (setf (fill-pointer (actors-next actors)) 0)
            (loop
               :for actor :across cur-actors
               :do
