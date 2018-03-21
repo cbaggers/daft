@@ -46,7 +46,7 @@
    (tile-count :initform '(1 1))
    (anim-length :initform 1)
    (anim-frame :initform 0)
-   (size :initform "size-not-known")))
+   (size :initform (v! 0 0))))
 
 (defmethod print-object ((actor actor) stream)
   (format stream "#<~a ~a>" (type-of actor)
@@ -92,23 +92,40 @@
   `(define-actor god ,values ,@states))
 
 (defun update-actors ()
-  (unless *god*
-    (setf *god* (spawn! 'god (v! 0 0))))
   (let ((res (viewport-resolution (current-viewport))))
     (with-setf (depth-test-function) nil
 
       (loop :for actors being the hash-values of *actors* :do
          (setf (fill-pointer (actors-next actors)) 0)
-         (loop :for actor :across (actors-current actors) :do
+         (loop
+            :for actor :across (actors-current actors)
+            :do
             (copy-actor-state actor)
             (update actor)
             (unless (slot-value actor 'dead)
-              (when (slot-value actor 'visual)
-                (draw-actor actor res))
+              ;; (when (slot-value actor 'visual)
+              ;;   (draw-actor actor res))
               (vector-push-extend
-               actor (actors-next actors)))))
+               actor (actors-next actors))))
+
+         (let ((cur-actors (actors-current actors))
+               (count 0))
+           (when (> (length cur-actors) 0)
+             ;; copy actor data to gpu-array
+             (with-gpu-array-as-c-array
+                 (c-arr *per-actor-data* :access-type :write-only)
+               (loop
+                  :for actor :across cur-actors
+                  :do
+                  (unless (slot-value actor 'dead)
+                    (write-actor-data actor c-arr count)
+                    (incf count))))
+             ;; draw 'count' instances of actor
+             (draw-instanced-actors count (aref cur-actors 0) res))))
       (livesupport:continuable
         (livesupport:update-repl-link))
+      (unless *god*
+        (setf *god* (spawn! 'god (v! 0 0))))
       (loop :for task :in *tasks-for-next-frame* :do
          (restart-case (funcall task)
            (continue () :report "Daft: Skip Task")))
@@ -136,20 +153,30 @@
                        (y uv-scale)))))
           (values uv-scale uv-offset))))))
 
-(defvar *max-actor-count* 40000)
-(defvar *per-actor-data* nil)
+(defun write-actor-data (actor c-array index)
+  (multiple-value-bind (uv-scale uv-offset) (calc-uv-mod actor)
+    (with-slots (visual current-public-state size) actor
+      (with-slots (pos rot) current-public-state
+        (let ((c-actor (aref-c c-array index)))
+          (setf (per-actor-data-transform c-actor)
+                (m4:* (m4:translation pos)
+                      (m4:rotation-z rot)))
+          (setf (per-actor-data-size c-actor)
+                size)
+          (setf (per-actor-data-uv-scale c-actor)
+                uv-scale)
+          (setf (per-actor-data-uv-offset c-actor)
+                uv-offset))))))
 
-(defstruct-g per-actor-data
-  (transform :mat4)
-  (size :vec2)
-  (uv-scale :vec2)
-  (uv-offset :vec2))
+(defun draw-instanced-actors (count actor res)
+  (with-slots (visual) actor
+    (with-blending *blend-params*
+      (with-instances count
+        (map-g #'instanced-cube *instanced-cube-stream*
+               :screen-height *screen-height-in-game-units*
+               :screen-ratio (/ (x res) (y res))
 
-(defun init-actor-data ()
-  (unless *per-actor-data*
-    (setf *per-actor-data*
-          (make-gpu-array nil :element-type 'per-actor-data
-                          :dimensions *max-actor-count*))))
+               :sam visual)))))
 
 (defun draw-actor (actor res)
   (multiple-value-bind (uv-scale uv-offset)

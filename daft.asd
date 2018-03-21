@@ -15,8 +15,10 @@
                :sdl2-game-controller-db
                :alexandria)
   :components ((:file "package")
+               (:file "globals")
                (:file "names")
                (:file "images")
+               (:file "render")
                (:file "daft")
                (:file "actors")
                (:file "define-actor")
