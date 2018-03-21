@@ -143,14 +143,15 @@
 (defun mouse-x ()
   0f0)
 
-
-
 (defun actors-in-range (distance &optional actor-kind)
   (declare (ignore distance actor-kind)))
 
 (defun offscreen-p (&optional (actor *self*))
   ;; TODO: WAT! ↓↓↓↓↓↓
-  (> (y (%pos actor)) 300))
+  (or (> (y (%pos actor)) 400)
+      (< (y (%pos actor)) -400)
+      (> (x (%pos actor)) 400)
+      (< (x (%pos actor)) -400)))
 
 
 ;;------------------------------------------------------------

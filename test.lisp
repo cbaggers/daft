@@ -1,5 +1,7 @@
 (in-package :daft)
 
+(defparameter *screen-height-in-game-units* 2000.0)
+
 (define-god () (:main))
 
 (define-actor foo ((:visual "shuttle.png")
@@ -7,8 +9,8 @@
   (:main
    (setf (%pos *self*)
          (v3:*s (v! dir 0f0)
-                (* (sin (* (now) 0.1)) 300)))))
-
+                (* (sin (* (x dir) (now) 0.2))
+                   1100)))))
 
 (defun hacky-test ()
   (loop :for i :below 3000 :do

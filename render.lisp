@@ -4,7 +4,6 @@
 
 (defstruct-g per-actor-data
   (pos :vec3)
-  (size :vec2)
   (rot :float)
   (anim-frame :float))
 
@@ -50,7 +49,8 @@
                    (screen-height :float)
                    (screen-ratio :float)
                    (tile-count-x :int)
-                   (tile-count-y :int))
+                   (tile-count-y :int)
+                   (size :vec2))
   (with-slots (pos size rot anim-frame) data
     (multiple-value-bind (uv-scale uv-offset)
         (calc-uv-mod tile-count-x tile-count-y anim-frame)

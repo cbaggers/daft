@@ -152,22 +152,21 @@
 
 (defun write-actor-data (actor c-array index)
   (let ((c-actor (aref-c c-array index)))
-    (with-slots (current-public-state size anim-frame) actor
+    (with-slots (current-public-state anim-frame) actor
       (with-slots (pos rot) current-public-state
         (setf (per-actor-data-pos c-actor) pos)
         (setf (per-actor-data-rot c-actor) rot)
-        (setf (per-actor-data-size c-actor) size)
         (setf (per-actor-data-anim-frame c-actor) anim-frame)))))
 
 (defun draw-instanced-actors (count actor res)
-  (with-slots (visual tile-count) actor
+  (with-slots (visual tile-count size) actor
     (destructuring-bind (tx ty) tile-count
       (with-blending *blend-params*
         (with-instances count
           (map-g #'instanced-cube *instanced-cube-stream*
                  :screen-height *screen-height-in-game-units*
                  :screen-ratio (/ (x res) (y res))
-
+                 :size size
                  :sam visual
                  :tile-count-x tx
                  :tile-count-y ty))))))
