@@ -8,9 +8,9 @@
                    (dir nil t))
   (:main
    (setf (%pos *self*)
-         (v3:*s (v! dir 0f0)
-                (* (sin (* (x dir) (now) 0.2))
-                   1100)))))
+         (v3-n:*s (v! dir 0f0)
+                  (* (sin (* (x dir) (now) 0.2))
+                     1100)))))
 
 (defun hacky-test ()
   (loop :for i :below 3000 :do
