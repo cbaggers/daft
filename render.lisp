@@ -51,17 +51,16 @@
                    (tile-count-x :int)
                    (tile-count-y :int)
                    (size :vec2))
-  (with-slots (pos size rot anim-frame) data
+  (with-slots (pos rot anim-frame) data
     (multiple-value-bind (uv-scale uv-offset)
         (calc-uv-mod tile-count-x tile-count-y anim-frame)
-      (let* ((vpos (pos vert))
+      (let* ((vpos (* (pos vert) (v! size 1)))
              (sa (sin rot))
              (ca (cos rot))
-             (vpos (v! (+ (* (x vpos) ca) (* (y vpos) sa))
-                       (+ (* (x vpos) (- sa)) (* (y vpos) ca))
+             (vpos (v! (+ (* (x vpos) ca) (* (y vpos) (- sa)))
+                       (+ (* (x vpos) sa) (* (y vpos) ca))
                        (z vpos)))
-             (game-v4 (+ (* (v! vpos 1)
-                            (v! size 1 1))
+             (game-v4 (+ (v! vpos 1)
                          (v! pos 0)))
              (gv4 (vert-game-units-to-gl game-v4
                                          screen-height
