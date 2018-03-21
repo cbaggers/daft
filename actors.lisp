@@ -58,9 +58,6 @@
 
 ;;------------------------------------------------------------
 
-(defvar *self*)
-(defvar *actors* (make-hash-table))
-
 (defstruct actors
   (current (make-array 0 :adjustable t :fill-pointer 0)
            :type (array t (*)))
@@ -103,8 +100,6 @@
             (copy-actor-state actor)
             (update actor)
             (unless (slot-value actor 'dead)
-              ;; (when (slot-value actor 'visual)
-              ;;   (draw-actor actor res))
               (vector-push-extend
                actor (actors-next actors))))
 
@@ -112,14 +107,15 @@
                (count 0))
            (when (> (length cur-actors) 0)
              ;; copy actor data to gpu-array
-             (with-gpu-array-as-c-array
-                 (c-arr *per-actor-data* :access-type :write-only)
+             (let ((c-arr *per-actor-c-data*))
                (loop
                   :for actor :across cur-actors
                   :do
                   (unless (slot-value actor 'dead)
                     (write-actor-data actor c-arr count)
-                    (incf count))))
+                    (incf count)))
+               (push-g (subseq-c c-arr 0 count)
+                       (subseq-g *per-actor-data* 0 count)))
              ;; draw 'count' instances of actor
              (draw-instanced-actors count (aref cur-actors 0) res))))
       (livesupport:continuable
@@ -139,8 +135,6 @@
                        next-public-state)))
          (rotatef (actors-current actors)
                   (actors-next actors))))))
-
-(defvar *blend-params* (make-blending-params))
 
 (defun calc-uv-mod (actor)
   (with-slots (tile-count anim-frame) actor
@@ -177,23 +171,6 @@
                :screen-ratio (/ (x res) (y res))
 
                :sam visual)))))
-
-(defun draw-actor (actor res)
-  (multiple-value-bind (uv-scale uv-offset)
-      (calc-uv-mod actor)
-    (with-slots (visual current-public-state size) actor
-      (with-slots (pos rot) current-public-state
-        (with-blending *blend-params*
-          (map-g #'simple-cube *cube-stream*
-                 :screen-height *screen-height-in-game-units*
-                 :screen-ratio (/ (x res) (y res))
-
-                 :sam visual
-                 :transform (m4:* (m4:translation pos)
-                                  (m4:rotation-z rot))
-                 :size size
-                 :uv-scale uv-scale
-                 :uv-offset uv-offset))))))
 
 (defun update-all-existing-actors (type-name
                                    new-visual
