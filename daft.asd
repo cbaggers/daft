@@ -22,7 +22,7 @@
                (:file "daft")
                (:file "actors")
                (:file "define-actor")
-               (:file "god")
                (:file "collision")
+               (:file "api/god")
                (:file "api/debug")
                (:file "api/actor")))

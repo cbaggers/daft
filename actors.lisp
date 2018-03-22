@@ -86,9 +86,6 @@
 (defun change-state (new-state)
   (%change-state *self* new-state))
 
-(defmacro define-god (values &body states)
-  `(define-actor god ,values ,@states))
-
 (defvar *stepper*
   (make-stepper (seconds 1f0)))
 (defvar *wip* 0)
