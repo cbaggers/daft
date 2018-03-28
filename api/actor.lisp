@@ -134,6 +134,20 @@
                         start-frame)
                      0f0))))))
 
+(defun compass-angle ()
+  (degrees (%rot *self*)))
+
+(defun compass-dir (&optional (distance 1f0))
+  (let ((ang (%rot *self*)))
+    (v2-n:*s (v2:from-angle ang)
+             (float distance 0f0))))
+
+(defun compass-dir-move (direction)
+  (let ((pos (%pos *self*)))
+    (incf (x pos) (x direction))
+    (incf (y pos) (y direction))
+    nil))
+
 ;;------------------------------------------------------------
 
 (defun play-sound (sound-name)

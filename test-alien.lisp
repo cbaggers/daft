@@ -29,7 +29,7 @@
 
 (define-actor ship ((:visual "shuttle2.png")
                     (start-time (now) t)
-                    (speed 0f0)
+                    (speed (v! 0 0))
                     (max-speed 10f0)
                     (fire (make-stepper (seconds 0.1)
                                         (seconds 0.1))))
@@ -40,8 +40,7 @@
               (funcall fire))
      (spawn 'bullet (v! 0 40)
             :fired-by *self*))
-   (setf speed
-         (clamp 0f0 max-speed
-                (+ (* speed 0.99)
-                   (* (pad-1d 1) 0.2))))
-   (move-forward speed)))
+   (v2:incf speed (v2:*s (compass-dir)
+                         (float (* (pad-1d 1) 0.2) 1f0)))
+   (setf speed (v2:*s speed 0.99))
+   (compass-dir-move speed)))
