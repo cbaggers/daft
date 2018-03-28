@@ -1,7 +1,7 @@
 (in-package :daft)
 
-(define-god ((spawn-counter (make-stepper (seconds 40)
-                                          (seconds 40))))
+(define-god ((spawn-counter (make-stepper (seconds 120)
+                                          (seconds 120))))
   (:game-starting
    (spawn 'ship (v! 0 -140))
    (change-state :game-running))
@@ -16,7 +16,7 @@
    (let ((touching (touching-p 'alien)))
      (when (or touching (offscreen-p))
        (die)))
-   (move-forward 2)))
+   (move-forward 4)))
 
 (define-actor alien ((:visual "alien.png")
                      (health 10))
