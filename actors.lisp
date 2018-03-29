@@ -151,7 +151,7 @@
                    (draw-actors-collision-mask count
                                                (aref cur-actors 0)
                                                res)))))))
-      (nineveh:draw-tex-bl (actors-coll-sampler (gethash 'alien *actors*)))
+      ;;(nineveh:draw-tex-bl (actors-coll-sampler (gethash 'alien *actors*)))
       (livesupport:continuable
         (livesupport:update-repl-link))
       ;; --
