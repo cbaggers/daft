@@ -12,7 +12,8 @@
       (setf *instanced-cube-stream*
             (make-buffer-stream (list vert-arr
                                       (cons *per-actor-data* 1))
-                                :index-array index-arr)))))
+                                :index-array index-arr)))
+    (setf *actors-fbo* (make-fbo 0))))
 
 (defun init-pads (ids)
   (setf *sdl2-pads*  (make-array 10 :initial-element nil))

@@ -160,12 +160,18 @@
 (defun actors-in-range (distance &optional actor-kind)
   (declare (ignore distance actor-kind)))
 
-(defun offscreen-p (&optional (actor *self*))
+(defun in-screen-p (&optional (actor *self*))
   ;; TODO: WAT! ↓↓↓↓↓↓
-  (or (> (y (%pos actor)) 400)
-      (< (y (%pos actor)) -400)
-      (> (x (%pos actor)) 400)
-      (< (x (%pos actor)) -400)))
+  (and (< (y (%pos actor)) 400)
+       (> (y (%pos actor)) -400)
+       (< (x (%pos actor)) 400)
+       (> (x (%pos actor)) -400)))
 
+(defun in-world-p (&optional (actor *self*))
+  ;; TODO: WAT! ↓↓↓↓↓↓
+  (and (< (y (%pos actor)) 1024)
+       (> (y (%pos actor)) -1024)
+       (< (x (%pos actor)) 1024)
+       (> (x (%pos actor)) -1024)))
 
 ;;------------------------------------------------------------

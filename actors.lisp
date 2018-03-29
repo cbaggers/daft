@@ -63,12 +63,23 @@
   (current (make-array 0 :adjustable t :fill-pointer 0)
            :type (array t (*)))
   (next (make-array 0 :adjustable t :fill-pointer 0)
-        :type (array t (*))))
+        :type (array t (*)))
+  (collision-texture nil :type (or null texture))
+  (coll-sampler nil :type (or null sampler)))
 
 (defun get-actor-arrays (type)
   (or (gethash type *actors*)
-      (setf (gethash type *actors*)
-            (make-actors))))
+      (let ((col (gen-collision-texture)))
+        (setf (gethash type *actors*)
+              (make-actors
+               :collision-texture col
+               :coll-sampler (sample col))))))
+
+(defun gen-collision-texture ()
+  (make-texture nil :dimensions '(2048 2048)
+                :element-type :uint8-vec4))
+
+(defvar *actors-fbo* nil)
 
 ;;------------------------------------------------------------
 
@@ -129,7 +140,18 @@
              ;; draw 'count' instances of actor
              (draw-instanced-actors count
                                     (aref cur-actors 0)
-                                    res))))
+                                    res))
+           (with-setf (clear-color) (v! 0 0 0 0)
+             (setf (attachment *actors-fbo* 0)
+                   (texref (actors-collision-texture actors)))
+             (with-fbo-bound (*actors-fbo*)
+               (clear-fbo *actors-fbo*)
+               (when (> count 0)
+                 (let ((*screen-height-in-game-units* 2048f0))
+                   (draw-actors-collision-mask count
+                                               (aref cur-actors 0)
+                                               res)))))))
+      (nineveh:draw-tex-bl (actors-coll-sampler (gethash 'alien *actors*)))
       (livesupport:continuable
         (livesupport:update-repl-link))
       ;; --
@@ -163,6 +185,19 @@
       (with-blending *blend-params*
         (with-instances count
           (map-g #'instanced-cube *instanced-cube-stream*
+                 :screen-height *screen-height-in-game-units*
+                 :screen-ratio (/ (x res) (y res))
+                 :size size
+                 :sam visual
+                 :tile-count-x tx
+                 :tile-count-y ty))))))
+
+(defun draw-actors-collision-mask (count actor res)
+  (with-slots (visual tile-count size) actor
+    (destructuring-bind (tx ty) tile-count
+      (with-blending *blend-params*
+        (with-instances count
+          (map-g #'write-collision-map *instanced-cube-stream*
                  :screen-height *screen-height-in-game-units*
                  :screen-ratio (/ (x res) (y res))
                  :size size

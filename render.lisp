@@ -7,6 +7,9 @@
   (rot :float)
   (anim-frame :float))
 
+(defstruct-g collision-info
+  (actors (:uint 20000)))
+
 (defun init-actor-data ()
   (unless *per-actor-data*
     (setf *per-actor-data*
@@ -71,14 +74,21 @@
                 uv-offset)))))
 
 (defun-g icube-fs ((uv :vec2)
-                  (uv-scale :vec2)
-                  (uv-offset :vec2)
-                  &uniform
-                  (sam :sampler-2d))
-  (texture sam (+ (* uv uv-scale) uv-offset)))
+                   (uv-scale :vec2)
+                   (uv-offset :vec2)
+                   &uniform
+                   (sam :sampler-2d)
+                   (collision collision-info :ssbo :std-430))
+  (with-slots (actors) collision
+    (setf (aref actors 0) (uint 1))
+    (texture sam (+ (* uv uv-scale) uv-offset))))
 
 (defpipeline-g instanced-cube ()
   :vertex (icube-vs g-pnt per-actor-data)
   :fragment (icube-fs :vec2 :vec2 :vec2))
 
 ;;------------------------------------------------------------
+
+(defpipeline-g write-collision-map ()
+  :vertex (icube-vs g-pnt per-actor-data)
+  :fragment (icube-fs :vec2 :vec2 :vec2))

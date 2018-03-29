@@ -14,7 +14,8 @@
                       (speed 1))
   (:main
    (let ((touching (touching-p 'alien)))
-     (when (or touching (offscreen-p))
+     (when (or touching
+               (not (in-world-p)))
        (die)))
    (move-forward 4)))
 
@@ -26,6 +27,10 @@
      (decf health)
      (when (<= health 0)
        (die)))))
+
+(define-actor new-thing ((:visual "alien.png")
+                         (health 10))
+  (:main))
 
 (define-actor ship ((:visual "shuttle2.png")
                     (start-time (now) t)
