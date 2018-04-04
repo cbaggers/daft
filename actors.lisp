@@ -47,7 +47,8 @@
    (tile-count :initform '(1 1))
    (anim-length :initform 1)
    (anim-frame :initform 0)
-   (size :initform (v! 0 0))))
+   (size :initform (v! 0 0))
+   kind))
 
 (defmethod print-object ((actor actor) stream)
   (format stream "#<~a ~a>" (type-of actor)
@@ -267,11 +268,12 @@
                  (apply #'make-instance hack-name
                         args)
                  args)))
-
     (with-slots (current-public-state
                  next-public-state
-                 debug-name)
+                 debug-name
+                 kind)
         actor
+      (setf kind (gethash actor-kind-name *actors*))
       (setf current-public-state
             (make-instance 'public-state
                            :pos (v3:+ parent-pos
