@@ -76,7 +76,9 @@
    (coll-sampler :initform nil
                  :initarg :coll-sampler
                  :type (or null sampler)
-                 :accessor actors-coll-sampler)))
+                 :accessor actors-coll-sampler)
+   (coll-with :initform (make-hash-table)
+              :accessor actors-coll-with)))
 
 (defun make-actors (&key current next collision-texture coll-sampler)
   (make-instance
@@ -131,6 +133,7 @@
       (loop :for actors being the hash-values of *actors* :do
          (setf (fill-pointer (actors-next actors)) 0))
       (loop :for actors being the hash-values of *actors* :do
+         (clrhash (actors-coll-with actors))
          (let* ((cur-actors (actors-current actors))
                 (c-arr *per-actor-c-data*)
                 (count 0))
@@ -159,7 +162,11 @@
              ;; draw 'count' instances of actor
              (draw-instanced-actors count
                                     (aref cur-actors 0)
-                                    res))
+                                    res)
+             (run-collision-checks count
+                                   (aref cur-actors 0)
+                                   res
+                                   actors))
            (with-setf (clear-color) (v! 0 0 0 0)
              (setf (attachment *actors-fbo* 0)
                    (texref (actors-collision-texture actors)))
@@ -170,7 +177,9 @@
                    (draw-actors-collision-mask count
                                                (aref cur-actors 0)
                                                res)))))))
-      ;;(nineveh:draw-tex-bl (actors-coll-sampler (gethash 'alien *actors*)))
+      (nineveh:draw-tex-bl
+       (actors-coll-sampler
+        (gethash 'alien *actors*)))
       (livesupport:continuable
         (livesupport:update-repl-link))
       ;; --
@@ -189,6 +198,30 @@
                        next-public-state)))
          (rotatef (actors-current actors)
                   (actors-next actors))))))
+
+(defun run-collision-checks (count actor res actors)
+  (with-viewport (make-viewport '(2048 2048))
+    (loop
+       :for kind-name :being :the
+       :hash-keys :of (slot-value actors 'coll-with)
+       :do
+       (let* ((kind (gethash kind-name *actors*))
+              (coll-mask (actors-coll-sampler kind)))
+         (with-slots (visual tile-count size) actor
+           (destructuring-bind (tx ty) tile-count
+             ;;(with-instances count)
+             (map-g #'check-collisions-with
+                    *instanced-cube-stream*
+                    :screen-height *screen-height-in-game-units*
+                    :screen-ratio (/ (x res) (y res))
+                    :size size
+                    :sam visual
+                    :tile-count-x tx
+                    :tile-count-y ty
+                    :coll-mask coll-mask
+                    :world-size (v! 2048 2048)
+                    :collision *ssbo*
+                    )))))))
 
 (defun write-actor-data (actor c-array index)
   (let ((c-actor (aref-c c-array index)))

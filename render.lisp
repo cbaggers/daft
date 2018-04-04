@@ -7,8 +7,8 @@
   (rot :float)
   (anim-frame :float))
 
-(defstruct-g collision-info
-  (actors (:uint #.+max-actor-count+)))
+(defstruct-g (collision-info :layout std-430)
+  (actors (:int #.+max-actor-count+)))
 
 (defun init-actor-data ()
   (unless *per-actor-data*
@@ -77,11 +77,8 @@
                    (uv-scale :vec2)
                    (uv-offset :vec2)
                    &uniform
-                   (sam :sampler-2d)
-                   (collision collision-info :ssbo :std-430))
-  (with-slots (actors) collision
-    (setf (aref actors 0) (uint 1))
-    (texture sam (+ (* uv uv-scale) uv-offset))))
+                   (sam :sampler-2d))
+  (texture sam (+ (* uv uv-scale) uv-offset)))
 
 (defpipeline-g instanced-cube ()
   :vertex (icube-vs g-pnt per-actor-data)
@@ -92,3 +89,56 @@
 (defpipeline-g write-collision-map ()
   :vertex (icube-vs g-pnt per-actor-data)
   :fragment (icube-fs :vec2 :vec2 :vec2))
+
+;;------------------------------------------------------------
+
+(defun-g coll-mask-vs ((vert g-pnt)
+                       (data per-actor-data)
+                       &uniform
+                       (screen-height :float)
+                       (screen-ratio :float)
+                       (tile-count-x :int)
+                       (tile-count-y :int)
+                       (size :vec2)
+                       (world-size :vec2))
+  (with-slots (pos rot anim-frame) data
+    (multiple-value-bind (uv-scale uv-offset)
+        (calc-uv-mod tile-count-x tile-count-y anim-frame)
+      (let* ((vpos (* (pos vert) (v! size 1)))
+             (sa (sin rot))
+             (ca (cos rot))
+             (vpos (v! (+ (* (x vpos) ca) (* (y vpos) (- sa)))
+                       (+ (* (x vpos) sa) (* (y vpos) ca))
+                       (z vpos)))
+             (game-v4 (+ (v! vpos 1)
+                         (v! pos 0)))
+             (gv4 (vert-game-units-to-gl game-v4
+                                         screen-height
+                                         screen-ratio))
+             (coll-uv (/ (s~ game-v4 :xy) world-size)))
+    (values (v! (* vpos 100) 1)
+                (tex vert)
+                uv-scale
+                uv-offset
+                coll-uv)))))
+
+(defun-g coll-mask-fs ((uv :vec2)
+                       (uv-scale :vec2)
+                       (uv-offset :vec2)
+                       (coll-uv :vec2)
+                       &uniform
+                       (sam :sampler-2d)
+                       (coll-mask :sampler-2d)
+                       (collision collision-info :ssbo))
+  (let ((our-color (texture sam (+ (* uv uv-scale) uv-offset)))
+        (threshold (vec4 0.01 0.01 0.01 0)))
+    (setf (aref (collision-info-actors collision) 0) 123)
+    (setf (aref (collision-info-actors collision) 1) 123)
+    (setf (aref (collision-info-actors collision) 2) 123)
+    (discard)))
+
+(defpipeline-g check-collisions-with ()
+  :vertex (coll-mask-vs g-pnt per-actor-data)
+  :fragment (coll-mask-fs :vec2 :vec2 :vec2 :vec2))
+
+;;------------------------------------------------------------

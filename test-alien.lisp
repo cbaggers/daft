@@ -40,6 +40,8 @@
                                         (seconds 0.1))))
   (:main
    (set-angle-from-analog 0)
+   (when (coll-with 'alien)
+     (print "blerp"))
    (when (and (or (mouse-button (mouse) mouse.left)
                   (pad-button 0))
               (funcall fire))

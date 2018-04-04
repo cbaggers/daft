@@ -148,6 +148,12 @@
     (incf (y pos) (y direction))
     nil))
 
+(defun coll-with (actor-kind)
+  (with-slots (kind) *self*
+    (with-slots (coll-with) kind
+      (setf (gethash actor-kind coll-with) t)))
+  nil)
+
 ;;------------------------------------------------------------
 
 (defun play-sound (sound-name)
