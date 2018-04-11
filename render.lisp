@@ -140,7 +140,6 @@
          (collision-val (step 0.01 (vmax collision-col))))
     (atomic-add (aref (collision-info-actors collision) id)
                 (int collision-val))
-    (setf gl-frag-depth 1f0)
     (vec4 collision-val)))
 
 (defpipeline-g check-collisions-with ()
