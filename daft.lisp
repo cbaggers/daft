@@ -5,6 +5,8 @@
 (defun init ()
   (unless *sdl2-pads*
     (init-pads '(0)))
+  (unless *ssbo*
+    (setf *ssbo* (make-ssbo nil 'collision-info)))
   (unless *instanced-cube-stream*
     (init-actor-data)
     (destructuring-bind (vert-arr index-arr)

@@ -15,5 +15,6 @@
 (defvar *sdl2-pads* nil)
 (defvar *self*)
 (defvar *tasks-for-next-frame* nil)
+(defvar *ssbo* nil)
 
 ;;------------------------------------------------------------
