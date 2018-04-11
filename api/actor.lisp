@@ -149,10 +149,12 @@
     nil))
 
 (defun coll-with (actor-kind)
-  (with-slots (kind) *self*
+  (with-slots (kind id) *self*
     (with-slots (coll-with) kind
-      (setf (gethash actor-kind coll-with) t)))
-  nil)
+      (setf (gethash actor-kind coll-with) t))
+    (let ((results (gethash actor-kind (actors-coll-results kind))))
+      (when (and id results)
+        (aref results id)))))
 
 ;;------------------------------------------------------------
 

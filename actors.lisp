@@ -39,7 +39,8 @@
 ;;------------------------------------------------------------
 
 (defclass actor ()
-  ((debug-name :initform (get-name) :reader debug-name)
+  ((id :initform nil :accessor id)
+   (debug-name :initform (get-name) :reader debug-name)
    (current-public-state)
    (next-public-state)
    (visual :initarg :visual)
@@ -78,7 +79,9 @@
                  :type (or null sampler)
                  :accessor actors-coll-sampler)
    (coll-with :initform (make-hash-table)
-              :accessor actors-coll-with)))
+              :accessor actors-coll-with)
+   (coll-results :initform (make-hash-table)
+                 :accessor actors-coll-results)))
 
 (defun make-actors (&key current next collision-texture coll-sampler)
   (make-instance
@@ -154,6 +157,7 @@
               :do
               (unless (slot-value actor 'dead)
                 (write-actor-data actor c-arr count)
+                (setf (id actor) count)
                 (incf count)))
            (when (> count 0)
              ;; =====================
@@ -223,11 +227,29 @@
                       :coll-mask coll-mask
                       :world-size (v! 2048 2048)
                       :collision *ssbo*))))
-         (let ((col-data
-                (with-gpu-array-as-c-array (tmp (ssbo-data *ssbo*))
-                  (pull-g (subseq-c (collision-info-actors (aref-c tmp 0))
-                                    0 count)))))
-           (declare (ignore col-data)))))))
+         (let ((results (gethash kind-name (actors-coll-results actors))))
+           (if results
+               (ensure-array-size results count)
+               (let ((arr (make-array count :adjustable t :fill-pointer t
+                                      :initial-element nil
+                                      :element-type 'boolean)))
+                 (setf (gethash kind-name (actors-coll-results actors)) arr
+                       results arr)))
+           (with-gpu-array-as-c-array (tmp (ssbo-data *ssbo*))
+             (let ((cols (collision-info-actors (aref-c tmp 0))))
+               (loop :for i :below count :do
+                  (setf (aref results i)
+                        (> (aref-c cols i) 0))))))))))
+
+(defun ensure-array-size (arr count)
+  (let ((len (length arr)))
+    (cond
+      ((> len count)
+       (setf (fill-pointer arr) count))
+      ((< len count)
+       (adjust-array arr count :initial-element nil
+                     :fill-pointer t))))
+  arr)
 
 (defun write-actor-data (actor c-array index)
   (let ((c-actor (aref-c c-array index)))
