@@ -1,15 +1,6 @@
 (in-package :daft)
 
-(defvar *noisy-spawn* t)
-
 ;;------------------------------------------------------------
-
-(defun spawn (actor-kind-name pos
-              &rest args &key &allow-other-keys)
-  (%spawn actor-kind-name
-          (%pos *self*)
-          (%rot *self*)
-          pos args))
 
 (defun strafe (distance)
   (let ((distance (float distance 0f0)))

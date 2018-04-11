@@ -8,7 +8,7 @@
         (%touching-set-p self target))))
 
 (defun %touching-kind-p (self target)
-  (let ((actors (get-actor-arrays target)))
+  (let ((actors (get-actor-kind target)))
     (loop :for actor :across (actors-current actors)
        :when (and (typep actor target)
                   (%touching-p self actor))

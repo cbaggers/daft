@@ -21,6 +21,7 @@
                (:file "render")
                (:file "daft")
                (:file "actors")
+               (:file "tiles")
                (:file "define-actor")
                (:file "collision")
                (:file "api/god")

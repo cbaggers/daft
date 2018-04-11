@@ -6,6 +6,20 @@
   ((pos :initform (v! 0 0 0) :initarg :pos)
    (rot :initform 0f0 :initarg :rot)))
 
+(defun make-public-state (&optional start-pos creator)
+  (let ((state (make-instance 'public-state)))
+    (when (and start-pos creator)
+      (let ((creator-pos (%pos creator))
+            (creator-rot (%rot creator)))
+        (with-slots (pos rot) state
+          (setf pos (v3:+ creator-pos
+                           (m3:*v (m3:rotation-z creator-rot)
+                                  (v! (x start-pos)
+                                      (y start-pos)
+                                      *default-z-offset*)))
+                rot creator-rot))))
+    state))
+
 (defun %pos (actor)
   (slot-value
    (if (eq *self* actor)
@@ -41,15 +55,15 @@
 (defclass actor ()
   ((id :initform nil :accessor id)
    (debug-name :initform (get-name) :reader debug-name)
-   (current-public-state)
-   (next-public-state)
-   (visual :initarg :visual)
    (dead :initform nil)
-   (tile-count :initform '(1 1))
-   (anim-length :initform 1)
-   (anim-frame :initform 0)
-   (size :initform (v! 0 0))
-   (noisy :initform t)
+   (anim-frame :initform 0f0)
+   current-public-state
+   next-public-state
+   state
+   visual
+   tile-count
+   anim-length
+   size
    kind))
 
 (defmethod print-object ((actor actor) stream)
@@ -92,7 +106,7 @@
    :collision-texture collision-texture
    :coll-sampler coll-sampler))
 
-(defun get-actor-arrays (type)
+(defun get-actor-kind (type)
   (or (gethash type *actors*)
       (let ((col (gen-collision-texture)))
         (setf (gethash type *actors*)
@@ -145,8 +159,7 @@
               :for actor :across cur-actors
               :do
               (copy-actor-state actor)
-              (let ((*noisy-spawn* (slot-value actor 'noisy)))
-                (update actor))
+              (update actor)
               (if (slot-value actor 'dead)
                   (when (symbol-package (debug-name actor))
                     (push (debug-name actor) *freed-names*))
@@ -160,7 +173,8 @@
               (unless (slot-value actor 'dead)
                 (write-actor-data actor c-arr count)
                 (setf (id actor) count)
-                (incf count)))
+                (when (slot-value actor 'visual)
+                  (incf count))))
            (with-setf (clear-color) (v! 0 0 0 0)
              (setf (attachment *actors-fbo* 0)
                    (texref (actors-collision-texture actors)))
@@ -285,71 +299,16 @@
                  :tile-count-x tx
                  :tile-count-y ty))))))
 
-(defun update-all-existing-actors (type-name
-                                   new-visual
-                                   new-tile-count
-                                   new-valid-states
-                                   gen-vars)
-  (let ((new-len (reduce #'* new-tile-count))
-        (actors (get-actor-arrays type-name)))
-    (loop :for a :across (actors-current actors) :do
-       (with-slots (visual
-                    state
-                    tile-count
-                    anim-length
-                    anim-frame
-                    size)
-           a
-         (loop :for (slot-name val)
-            :in (funcall gen-vars a)
-            :do (setf (slot-value a slot-name) val))
-         (setf visual (when new-visual
-                        (load-tex new-visual)))
-         (setf size
-               (if visual
-                   (v2:/ (resolution
-                          (sampler-texture visual))
-                         (v! tile-count))
-                   (v! 0 0)))
-         (setf tile-count new-tile-count
-               anim-length new-len
-               anim-frame (if (< anim-frame new-len)
-                              anim-frame
-                              0))
-         (when (not (find state new-valid-states))
-           (setf state (first new-valid-states)))))))
+(defun update-all-existing-actors (type-name)
+  (let ((actors (get-actor-kind type-name)))
+    (loop :for actor :across (actors-current actors) :do
+       (reinit-private-state actor)
+       (reinit-system-state actor))))
 
 ;;------------------------------------------------------------
 
-(defun %spawn (actor-kind-name parent-pos parent-rot
-               pos args)
-  (let* ((hack-name (intern (symbol-name actor-kind-name)
-                            :daft))
-         (actor (init-actor
-                 (apply #'make-instance hack-name
-                        args)
-                 args)))
-    (with-slots (current-public-state
-                 next-public-state
-                 debug-name
-                 kind)
-        actor
-      (setf kind (gethash actor-kind-name *actors*))
-      (setf current-public-state
-            (make-instance 'public-state
-                           :pos (v3:+ parent-pos
-                                      (m3:*v (m3:rotation-z parent-rot)
-                                             (v! (x pos)
-                                                 (y pos)
-                                                 *default-z-offset*)))
-                           :rot parent-rot))
-      (setf next-public-state
-            (make-instance 'public-state))
-      (when *noisy-spawn*
-        (format t "~%; ~a has spawned!" debug-name)))
-
-    (let ((actors (get-actor-arrays actor-kind-name)))
-      (vector-push-extend actor (actors-next actors)))
-    actor))
+(defgeneric spawn (actor-kind-name pos &key))
+(defgeneric reinit-system-state (actor))
+(defgeneric reinit-private-state (actor))
 
 ;;------------------------------------------------------------

@@ -2,8 +2,7 @@
 
 (define-god ((spawn-counter (make-stepper (seconds 10)
                                           (seconds 10)))
-             (spin-counter (make-stepper (seconds 1)))
-             (:noisy nil))
+             (spin-counter (make-stepper (seconds 2))))
   (:game-starting
    (spawn 'ship (v! 0 -140))
    (change-state :game-running))
@@ -41,6 +40,7 @@
      (die))))
 
 (define-actor enemy-bullet ((:visual "bullet.png")
+                            (:noisy nil)
                             (speed 1))
   (:main
    (when (or (coll-with 'ship)

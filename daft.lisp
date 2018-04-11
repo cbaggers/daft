@@ -41,19 +41,18 @@
   (swap)
   (decay-events))
 
-
-(defun daft (nineveh::action &optional nineveh::frames)
-  (ecase nineveh::action
+(defun daft (action &optional frames)
+  (ecase action
     (:start
      (if (= *daft-frame-counter* 0)
          (progn
-           (setf *daft-frame-counter* (or nineveh::frames -1))
+           (setf *daft-frame-counter* (or frames -1))
            (format t "~%- starting ~a -" 'daft)
            (unwind-protect
                 (progn
                   (when (cepl.lifecycle:uninitialized-p) (repl))
-                  (let ((nineveh::on-start #'init))
-                    (when nineveh::on-start (funcall nineveh::on-start)))
+                  (let ((on-start #'init))
+                    (when on-start (funcall on-start)))
                   (loop :until (= *daft-frame-counter* 0) :do
                      (decf *daft-frame-counter* 1)
                      (livesupport:continuable
@@ -65,7 +64,4 @@
              (setf *daft-frame-counter* 0)
              (format t "~%~%- stopping ~a -~%" 'daft)))
          (format t "~%~%- ~a is already running -~%" 'daft)))
-    (:stop (setf *daft-frame-counter* (max 0 (or nineveh::frames 0))))))
-
-
-;;
+    (:stop (setf *daft-frame-counter* (max 0 (or frames 0))))))
