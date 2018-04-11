@@ -144,7 +144,8 @@
          (collision-val (step 0.01 (vmax collision-col))))
     (atomic-add (aref (collision-info-actors collision) id)
                 (int collision-val))
-    (vec4 collision-val)))
+    ;;(vec4 collision-val)
+    (discard)))
 
 (defpipeline-g check-collisions-with ()
   :vertex (coll-mask-vs g-pnt per-actor-data)

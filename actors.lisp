@@ -159,30 +159,30 @@
                 (write-actor-data actor c-arr count)
                 (setf (id actor) count)
                 (incf count)))
-           (when (> count 0)
-             ;; =====================
-             ;; this isnt the problem
-             ;; =====================
-             (push-g (subseq-c c-arr 0 count)
-                     (subseq-g *per-actor-data* 0 count))
-             ;; draw 'count' instances of actor
-             (draw-instanced-actors count
-                                    (aref cur-actors 0)
-                                    res)
-             (run-collision-checks count
-                                   (aref cur-actors 0)
-                                   res
-                                   actors))
            (with-setf (clear-color) (v! 0 0 0 0)
              (setf (attachment *actors-fbo* 0)
                    (texref (actors-collision-texture actors)))
-             (with-fbo-bound (*actors-fbo*)
-               (clear-fbo *actors-fbo*)
-               (when (> count 0)
+             (clear-fbo *actors-fbo*)
+             (when (> count 0)
+               ;; =====================
+               ;; this isnt the problem
+               ;; =====================
+               (push-g (subseq-c c-arr 0 count)
+                       (subseq-g *per-actor-data* 0 count))
+               ;; draw 'count' instances of actor
+               (draw-instanced-actors count
+                                      (aref cur-actors 0)
+                                      res)
+
+               (with-fbo-bound (*actors-fbo*)
                  (let ((*screen-height-in-game-units* 2048f0))
                    (draw-actors-collision-mask count
                                                (aref cur-actors 0)
-                                               res)))))))
+                                               res))
+                 (run-collision-checks count
+                                       (aref cur-actors 0)
+                                       res
+                                       actors))))))
       ;; (nineveh:draw-tex-bl
       ;;  (actors-coll-sampler
       ;;   (gethash 'alien *actors*)))
