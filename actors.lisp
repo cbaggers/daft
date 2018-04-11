@@ -142,9 +142,11 @@
               :do
               (copy-actor-state actor)
               (update actor)
-              (unless (slot-value actor 'dead)
-                (vector-push-extend
-                 actor (actors-next actors))))
+              (if (slot-value actor 'dead)
+                  (when (symbol-package (debug-name actor))
+                    (push (debug-name actor) *freed-names*))
+                  (vector-push-extend
+                   actor (actors-next actors))))
            ;; --
 
            (loop

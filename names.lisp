@@ -2005,4 +2005,9 @@
 
 (defun get-name ()
   (or (pop *names*)
-      (gensym)))
+      (if *freed-names*
+          (progn
+            (setf *names* (nreverse *freed-names*)
+                  *freed-names* nil)
+            (get-name))
+          (gensym))))
