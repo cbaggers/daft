@@ -1,13 +1,17 @@
 (in-package :daft)
 
 (define-god ((spawn-counter (make-stepper (seconds 10)
-                                          (seconds 10))))
+                                          (seconds 10)))
+             (spin-counter (make-stepper (seconds 1)))
+             (:noisy nil))
   (:game-starting
    (spawn 'ship (v! 0 -140))
    (change-state :game-running))
   (:game-running
    (when (funcall spawn-counter)
-     (spawn 'alien (v! 0 200)))))
+     (spawn 'alien (v! 0 200)))
+   (when (funcall spin-counter)
+     (spawn 'spin-emit (v! (- (random 400) 200) 300)))))
 
 (define-actor bullet ((:visual "bullet.png")
                       (fired-by nil)
@@ -18,20 +22,42 @@
      (die))
    (move-forward 4)))
 
+(define-actor spin-emit ((:visual "bullet.png")
+                         (:noisy nil)
+                         (fire (make-stepper (seconds 0.01))))
+  (:main
+   (compass-dir-move (v! 0 -3))
+   (turn-left 4)
+   (when (funcall fire)
+     (spawn 'enemy-bullet (v! 0 0))
+     (turn-left 90)
+     (spawn 'enemy-bullet (v! 0 0))
+     (turn-left 90)
+     (spawn 'enemy-bullet (v! 0 0))
+     (turn-left 90)
+     (spawn 'enemy-bullet (v! 0 0))
+     (turn-left 90))
+   (when (not (in-world-p))
+     (die))))
+
+(define-actor enemy-bullet ((:visual "bullet.png")
+                            (speed 1))
+  (:main
+   (when (or (coll-with 'ship)
+             (not (in-world-p)))
+     (die))
+   (move-forward 4)))
+
 (define-actor alien ((:visual "alien.png")
                      (health 10)
                      (center 0.0))
   (:main
    (strafe (* (sin (now)) 2))
-   (move-forward -0.2)
+   (move-forward -2)
    (when (or (coll-with 'bullet)
-             (not (in-screen-p)))
+             (not (in-world-p)))
      (when (<= (decf health) 0)
        (die)))))
-
-(define-actor new-thing ((:visual "alien.png")
-                         (health 10))
-  (:main))
 
 (define-actor ship ((:visual "shuttle2.png")
                     (start-time (now) t)
