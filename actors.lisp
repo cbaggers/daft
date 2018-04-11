@@ -49,6 +49,7 @@
    (anim-length :initform 1)
    (anim-frame :initform 0)
    (size :initform (v! 0 0))
+   (noisy :initform t)
    kind))
 
 (defmethod print-object ((actor actor) stream)
@@ -144,7 +145,8 @@
               :for actor :across cur-actors
               :do
               (copy-actor-state actor)
-              (update actor)
+              (let ((*noisy-spawn* (slot-value actor 'noisy)))
+                (update actor))
               (if (slot-value actor 'dead)
                   (when (symbol-package (debug-name actor))
                     (push (debug-name actor) *freed-names*))
@@ -184,9 +186,6 @@
                                        (aref cur-actors 0)
                                        res
                                        actors))))))
-      ;; (nineveh:draw-tex-bl
-      ;;  (actors-coll-sampler
-      ;;   (gethash 'alien *actors*)))
       (livesupport:continuable
         (livesupport:update-repl-link))
       ;; --
@@ -290,6 +289,7 @@
                                    new-visual
                                    new-tile-count
                                    new-valid-states
+                                   new-noisy
                                    gen-vars)
   (let ((new-len (reduce #'* new-tile-count))
         (actors (get-actor-arrays type-name)))
@@ -299,13 +299,15 @@
                     tile-count
                     anim-length
                     anim-frame
-                    size)
+                    size
+                    noisy)
            a
          (loop :for (slot-name val)
             :in (funcall gen-vars a)
             :do (setf (slot-value a slot-name) val))
          (setf visual (when new-visual
                         (load-tex new-visual)))
+         (setf noisy new-noisy)
          (setf size
                (if visual
                    (v2:/ (resolution

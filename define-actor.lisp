@@ -25,8 +25,9 @@
          (state-names (mapcar #'first states))
          (default-state (first state-names)))
     (assert (every #'keywordp state-names))
-    (destructuring-bind (&key visual tile-count)
+    (destructuring-bind (&key visual tile-count noisy)
         (reduce #'append keyword-vars)
+      (assert (member noisy '(t nil)))
       (let ((tile-count (if (numberp tile-count)
                             (list tile-count 1)
                             (or tile-count '(1 1)))))
@@ -49,11 +50,12 @@
                     (loop :for x :in spawn-args :by #'cddr
                        :collect x)))
                (declare (ignorable spawn-keys))
-               (with-slots (visual size tile-count) self
+               (with-slots (visual size tile-count noisy) self
                  (when visual
                    (setf size
                          (v2:/ (resolution (sampler-texture visual))
-                               (v! tile-count)))))
+                               (v! tile-count))))
+                 (setf noisy ,noisy))
                ,@(loop :for (name val) :in local-vars :collect
                     `(unless (find ',name spawn-keys :test #'string=)
                        (setf (slot-value self ',name)
@@ -73,7 +75,7 @@
            (push
             (lambda ()
               (update-all-existing-actors
-               ',name ,visual ',tile-count ',state-names
+               ',name ,visual ',tile-count ',state-names ,noisy
                (lambda (actor)
                  (let ((*self* actor))
                    (list
