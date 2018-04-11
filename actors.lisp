@@ -222,7 +222,12 @@
                       :tile-count-y ty
                       :coll-mask coll-mask
                       :world-size (v! 2048 2048)
-                      :collision *ssbo*))))))))
+                      :collision *ssbo*))))
+         (let ((col-data
+                (with-gpu-array-as-c-array (tmp (ssbo-data *ssbo*))
+                  (pull-g (subseq-c (collision-info-actors (aref-c tmp 0))
+                                    0 count)))))
+           (declare (ignore col-data)))))))
 
 (defun write-actor-data (actor c-array index)
   (let ((c-actor (aref-c c-array index)))
