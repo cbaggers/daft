@@ -211,19 +211,18 @@
               (coll-mask (actors-coll-sampler kind)))
          (with-slots (visual tile-count size) actor
            (destructuring-bind (tx ty) tile-count
-             ;;(with-instances count)
-             (map-g #'check-collisions-with
-                    *instanced-cube-stream*
-                    :screen-height *screen-height-in-game-units*
-                    :screen-ratio (/ (x res) (y res))
-                    :size size
-                    :sam visual
-                    :tile-count-x tx
-                    :tile-count-y ty
-                    :coll-mask coll-mask
-                    :world-size (v! 2048 2048)
-                    :collision *ssbo*
-                    )))))))
+             (with-instances count
+               (map-g #'check-collisions-with
+                      *instanced-cube-stream*
+                      :screen-height *screen-height-in-game-units*
+                      :screen-ratio (/ (x res) (y res))
+                      :size size
+                      :sam visual
+                      :tile-count-x tx
+                      :tile-count-y ty
+                      :coll-mask coll-mask
+                      :world-size (v! 2048 2048)
+                      :collision *ssbo*))))))))
 
 (defun write-actor-data (actor c-array index)
   (let ((c-actor (aref-c c-array index)))

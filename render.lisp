@@ -100,7 +100,8 @@
                        (tile-count-x :int)
                        (tile-count-y :int)
                        (size :vec2)
-                       (world-size :vec2))
+                       (world-size :vec2)
+                       (collision collision-info :ssbo))
   (with-slots (pos rot anim-frame) data
     (multiple-value-bind (uv-scale uv-offset)
         (calc-uv-mod tile-count-x tile-count-y anim-frame)
@@ -115,30 +116,38 @@
              (gv4 (vert-game-units-to-gl game-v4
                                          screen-height
                                          screen-ratio))
-             (coll-uv (/ (s~ game-v4 :xy) world-size)))
-    (values (v! (* vpos 100) 1)
+             (coll-uv (+ (/ (s~ game-v4 :xy) world-size)
+                         0.5)))
+        (atomic-min (aref (collision-info-actors collision)
+                          gl-instance-id)
+                    0)
+        (values (v! gv4)
                 (tex vert)
                 uv-scale
                 uv-offset
-                coll-uv)))))
+                coll-uv
+                (:flat gl-instance-id))))))
 
 (defun-g coll-mask-fs ((uv :vec2)
                        (uv-scale :vec2)
                        (uv-offset :vec2)
                        (coll-uv :vec2)
+                       (id :int)
                        &uniform
                        (sam :sampler-2d)
                        (coll-mask :sampler-2d)
                        (collision collision-info :ssbo))
-  (let ((our-color (texture sam (+ (* uv uv-scale) uv-offset)))
-        (threshold (vec4 0.01 0.01 0.01 0)))
-    (setf (aref (collision-info-actors collision) 0) 123)
-    (setf (aref (collision-info-actors collision) 1) 123)
-    (setf (aref (collision-info-actors collision) 2) 123)
-    (discard)))
+  (let* ((our-color (texture sam (+ (* uv uv-scale) uv-offset)))
+         (mask-col (texture coll-mask coll-uv))
+         (threshold (vec4 0.01 0.01 0.01 0))
+         (collision-col (* mask-col (w our-color)))
+         (collision-val (step 0.01 (vmax collision-col))))
+    (atomic-add (aref (collision-info-actors collision) id)
+                (int collision-val))
+    (vec4 collision-val)))
 
 (defpipeline-g check-collisions-with ()
   :vertex (coll-mask-vs g-pnt per-actor-data)
-  :fragment (coll-mask-fs :vec2 :vec2 :vec2 :vec2))
+  :fragment (coll-mask-fs :vec2 :vec2 :vec2 :vec2 :int))
 
 ;;------------------------------------------------------------
