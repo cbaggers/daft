@@ -1,7 +1,7 @@
 (in-package :daft)
 
-(define-god ((spawn-counter (make-stepper (seconds 120)
-                                          (seconds 120))))
+(define-god ((spawn-counter (make-stepper (seconds 10)
+                                          (seconds 10))))
   (:game-starting
    (spawn 'ship (v! 0 -140))
    (change-state :game-running))
@@ -13,19 +13,20 @@
                       (fired-by nil)
                       (speed 1))
   (:main
-   (let ((touching (touching-p 'alien)))
-     (when (or touching
-               (not (in-world-p)))
-       (die)))
+   (when (or (coll-with 'alien)
+             (not (in-world-p)))
+     (die))
    (move-forward 4)))
 
 (define-actor alien ((:visual "alien.png")
-                     (health 10))
+                     (health 10)
+                     (center 0.0))
   (:main
    (strafe (* (sin (now)) 2))
-   (when (touching-p 'bullet)
-     (decf health)
-     (when (<= health 0)
+   (move-forward -0.2)
+   (when (or (coll-with 'bullet)
+             (not (in-screen-p)))
+     (when (<= (decf health) 0)
        (die)))))
 
 (define-actor new-thing ((:visual "alien.png")
@@ -40,8 +41,8 @@
                                         (seconds 0.1))))
   (:main
    (set-angle-from-analog 0)
-   (when (coll-with 'alien)
-     (print "blerp"))
+   ;; (when (coll-with 'alien)
+   ;;   (print "blerp"))
    (when (and (or (mouse-button (mouse) mouse.left)
                   (pad-button 0))
               (funcall fire))

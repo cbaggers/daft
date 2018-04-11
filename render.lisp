@@ -41,10 +41,9 @@
   (let* ((game-v4 (/ pos
                      (v! (* screen-height screen-ratio)
                          screen-height
-                         screen-height
+                         1
                          1))))
-    (+ (* game-v4 (v! 2 2 2 1))
-       (v! 0 0 -10 0))))
+    (* game-v4 (v! 2 2 1 1))))
 
 (defun-g icube-vs ((vert g-pnt)
                    (data per-actor-data)
@@ -95,33 +94,30 @@
 (defun-g coll-mask-vs ((vert g-pnt)
                        (data per-actor-data)
                        &uniform
-                       (screen-height :float)
-                       (screen-ratio :float)
                        (tile-count-x :int)
                        (tile-count-y :int)
                        (size :vec2)
                        (world-size :vec2)
                        (collision collision-info :ssbo))
-  (with-slots (pos rot anim-frame) data
-    (multiple-value-bind (uv-scale uv-offset)
-        (calc-uv-mod tile-count-x tile-count-y anim-frame)
-      (let* ((vpos (* (pos vert) (v! size 1)))
-             (sa (sin rot))
-             (ca (cos rot))
-             (vpos (v! (+ (* (x vpos) ca) (* (y vpos) (- sa)))
-                       (+ (* (x vpos) sa) (* (y vpos) ca))
-                       (z vpos)))
-             (game-v4 (+ (v! vpos 1)
-                         (v! pos 0)))
-             (gv4 (vert-game-units-to-gl game-v4
-                                         screen-height
-                                         screen-ratio))
-             (coll-uv (+ (/ (s~ game-v4 :xy) world-size)
-                         0.5)))
-        (atomic-min (aref (collision-info-actors collision)
-                          gl-instance-id)
-                    0)
-        (values (v! gv4)
+  (with-slots ((world-pos pos) rot anim-frame) data
+    (let* ((vpos (* (pos vert) ;; -0.5 -> 0.5 cube
+                    (v! size 1))) ;;-size/2 -> size/2 box
+           (sa (sin rot))
+           (ca (cos rot))
+           (vpos (v! (+ (* (x vpos) ca) (* (y vpos) (- sa)))
+                     (+ (* (x vpos) sa) (* (y vpos) ca))
+                     (z vpos)))
+           (vert-world-pos (+ (v! vpos 1)
+                              (v! world-pos 0)))
+           (unit-pos (/ vert-world-pos (v! world-size 1 1)))
+           (clip-pos (* unit-pos (v! 2 2 1 1)))
+           (coll-uv (+ (s~ unit-pos :xy) 0.5)))
+      (atomic-min (aref (collision-info-actors collision)
+                        gl-instance-id)
+                  0)
+      (multiple-value-bind (uv-scale uv-offset)
+          (calc-uv-mod tile-count-x tile-count-y anim-frame)
+        (values (v! (s~ clip-pos :xyz) 1f0)
                 (tex vert)
                 uv-scale
                 uv-offset
@@ -144,8 +140,8 @@
          (collision-val (step 0.01 (vmax collision-col))))
     (atomic-add (aref (collision-info-actors collision) id)
                 (int collision-val))
-    ;;(vec4 collision-val)
-    (discard)))
+    (setf gl-frag-depth 1f0)
+    (vec4 collision-val)))
 
 (defpipeline-g check-collisions-with ()
   :vertex (coll-mask-vs g-pnt per-actor-data)

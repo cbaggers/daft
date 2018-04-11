@@ -178,7 +178,8 @@
                  (let ((*screen-height-in-game-units* 2048f0))
                    (draw-actors-collision-mask count
                                                (aref cur-actors 0)
-                                               res))
+                                               res)))
+               (with-fbo-bound (*world-empty-fbo* :attachment-for-size t)
                  (run-collision-checks count
                                        (aref cur-actors 0)
                                        res
@@ -206,6 +207,7 @@
                   (actors-next actors))))))
 
 (defun run-collision-checks (count actor res actors)
+  (declare (ignore res))
   (with-viewport (make-viewport '(2048 2048))
     (loop
        :for kind-name :being :the
@@ -218,8 +220,6 @@
              (with-instances count
                (map-g #'check-collisions-with
                       *instanced-cube-stream*
-                      :screen-height *screen-height-in-game-units*
-                      :screen-ratio (/ (x res) (y res))
                       :size size
                       :sam visual
                       :tile-count-x tx
@@ -273,13 +273,14 @@
                  :tile-count-y ty))))))
 
 (defun draw-actors-collision-mask (count actor res)
+  (declare (ignore res))
   (with-slots (visual tile-count size) actor
     (destructuring-bind (tx ty) tile-count
       (with-blending *blend-params*
         (with-instances count
           (map-g #'write-collision-map *instanced-cube-stream*
                  :screen-height *screen-height-in-game-units*
-                 :screen-ratio (/ (x res) (y res))
+                 :screen-ratio 1f0
                  :size size
                  :sam visual
                  :tile-count-x tx
@@ -339,7 +340,9 @@
             (make-instance 'public-state
                            :pos (v3:+ parent-pos
                                       (m3:*v (m3:rotation-z parent-rot)
-                                             (v! (x pos) (y pos) 0)))
+                                             (v! (x pos)
+                                                 (y pos)
+                                                 *default-z-offset*)))
                            :rot parent-rot))
       (setf next-public-state
             (make-instance 'public-state))

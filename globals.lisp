@@ -16,5 +16,7 @@
 (defvar *self*)
 (defvar *tasks-for-next-frame* nil)
 (defvar *ssbo* nil)
+(defvar *default-z-offset* -10f0)
+(defvar *world-empty-fbo* nil)
 
 ;;------------------------------------------------------------

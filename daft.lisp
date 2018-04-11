@@ -9,13 +9,14 @@
     (setf *ssbo* (make-ssbo nil 'collision-info)))
   (unless *instanced-cube-stream*
     (init-actor-data)
+    (setf *actors-fbo* (make-fbo 0))
+    (setf *world-empty-fbo* (make-fbo '(nil :dimensions (2048 2048))))
     (destructuring-bind (vert-arr index-arr)
         (nineveh.mesh.data.primitives:cube-gpu-arrays)
       (setf *instanced-cube-stream*
             (make-buffer-stream (list vert-arr
                                       (cons *per-actor-data* 1))
-                                :index-array index-arr)))
-    (setf *actors-fbo* (make-fbo 0))))
+                                :index-array index-arr)))))
 
 (defun init-pads (ids)
   (setf *sdl2-pads*  (make-array 10 :initial-element nil))
