@@ -4,7 +4,7 @@
 
 (define-god () (:main))
 
-(define-actor foo ((:visual "shuttle.png")
+(define-actor foo ((:visual "test/shuttle.png")
                    (dir nil t))
   (:main
    (setf (%pos *self*)

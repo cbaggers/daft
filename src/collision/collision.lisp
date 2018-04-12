@@ -1,5 +1,7 @@
 (in-package :daft)
 
+;;------------------------------------------------------------
+
 (defun touching-p (&optional set-of-actors/actor-kind)
   (let ((self *self*)
         (target set-of-actors/actor-kind))
@@ -34,3 +36,17 @@
     (< (v2:distance (s~ (%pos a) :xy)
                     (s~ (%pos b) :xy))
        (+ r-a r-b))))
+
+;;------------------------------------------------------------
+
+(defun coll-with (actor-kind)
+  (with-slots (kind id) *self*
+    (with-slots (coll-with) kind
+      (setf (gethash actor-kind coll-with) t))
+    (let ((results
+           (gethash actor-kind
+                    (actors-coll-results kind))))
+      (when (and id results)
+        (aref results id)))))
+
+;;------------------------------------------------------------

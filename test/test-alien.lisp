@@ -1,5 +1,7 @@
 (in-package :daft)
 
+(setf *screen-height-in-game-units* 1200f0)
+
 (define-god ((spawn-counter (make-stepper (seconds 10)
                                           (seconds 10)))
              (spin-counter (make-stepper (seconds 2))))
@@ -12,7 +14,7 @@
    (when (funcall spin-counter)
      (spawn 'spin-emit (v! (- (random 400) 200) 300)))))
 
-(define-actor bullet ((:visual "bullet.png")
+(define-actor bullet ((:visual "test/bullet.png")
                       (fired-by nil)
                       (speed 1))
   (:main
@@ -21,7 +23,7 @@
      (die))
    (move-forward 4)))
 
-(define-actor spin-emit ((:visual "bullet.png")
+(define-actor spin-emit ((:visual "test/bullet.png")
                          (:noisy nil)
                          (fire (make-stepper (seconds 0.01))))
   (:main
@@ -39,7 +41,7 @@
    (when (not (in-world-p))
      (die))))
 
-(define-actor enemy-bullet ((:visual "bullet.png")
+(define-actor enemy-bullet ((:visual "test/bullet.png")
                             (:noisy nil)
                             (speed 1))
   (:main
@@ -48,7 +50,7 @@
      (die))
    (move-forward 4)))
 
-(define-actor alien ((:visual "alien.png")
+(define-actor alien ((:visual "test/alien.png")
                      (health 10)
                      (center 0.0))
   (:main
@@ -59,7 +61,7 @@
      (when (<= (decf health) 0)
        (die)))))
 
-(define-actor ship ((:visual "shuttle2.png")
+(define-actor ship ((:visual "test/shuttle2.png")
                     (start-time (now) t)
                     (speed (v! 0 0))
                     (max-speed 10f0)

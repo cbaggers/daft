@@ -18,5 +18,8 @@
 (defvar *ssbo* nil)
 (defvar *default-z-offset* -10f0)
 (defvar *world-empty-fbo* nil)
+(defvar *world-size* (v! 2048 2048))
+(defvar *world-viewport* (make-viewport *world-size*))
+(defvar *actors-fbo* nil)
 
 ;;------------------------------------------------------------
