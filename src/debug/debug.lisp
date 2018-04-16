@@ -3,8 +3,8 @@
 ;;------------------------------------------------------------
 
 (defun hey (name)
-  (loop :for arrays :being :the :hash-values :of *actors*
-     :for x := (find name (actors-current arrays)
+  (loop :for arrays :being :the :hash-values :of *actor-kinds*
+     :for x := (find name (this-frames-actors arrays)
                      :test #'string=
                      :key #'debug-name)
      :when x :return x))

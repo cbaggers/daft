@@ -49,9 +49,9 @@
 
 ;;------------------------------------------------------------
 
-(defun update-all-existing-actors (type-name)
-  (let ((actors (get-actor-kind type-name)))
-    (loop :for actor :across (actors-current actors) :do
+(defun reinit-all-actors-of-kind (type-name)
+  (let ((actors (get-actor-kind-by-name type-name)))
+    (loop :for actor :across (this-frames-actors actors) :do
        (reinit-private-state actor)
        (reinit-system-state actor))))
 

@@ -41,7 +41,7 @@
              ,@(gen-reinit-methods name private-vars visual tile-count
                                    state-names)
              ,(gen-change-state name state-names)
-             (push (lambda () (update-all-existing-actors ',name))
+             (push (lambda () (reinit-all-actors-of-kind ',name))
                    *tasks-for-next-frame*)))))))
 
 (defun gen-actor-class (name private-vars)
@@ -60,7 +60,7 @@
        (let* ((creator *self*)
               (actor (make-instance ',name))
               (*self* actor)
-              (kind-obj (get-actor-kind ',name)))
+              (kind-obj (get-actor-kind-by-name ',name)))
          (with-slots (current-public-state
                       next-public-state
                       debug-name
@@ -78,7 +78,7 @@
                 :collect
                 `(setf (slot-value actor ',slot-name)
                        (if ,was-set ,arg-name ,val)))
-           (vector-push-extend actor (actors-next kind-obj))
+           (vector-push-extend actor (next-frames-actors kind-obj))
            (when ,noisy
              (format t "~%; ~a has spawned!" debug-name))
            actor)))))

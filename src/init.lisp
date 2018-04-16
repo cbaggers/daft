@@ -20,7 +20,6 @@
     (setf *ssbo* (make-ssbo nil 'collision-info)))
   (unless *instanced-cube-stream*
     (init-actor-data)
-    (setf *actors-fbo* (make-fbo 0))
     (let ((world-dim (viewport-dimensions *world-viewport*)))
       (setf *world-empty-fbo*
             (make-fbo `(nil :dimensions ,world-dim))))

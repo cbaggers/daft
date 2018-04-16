@@ -4,7 +4,7 @@
 
 (defconstant +max-actor-count+ 20000)
 (defparameter *screen-height-in-game-units* 600f0)
-(defvar *actors* (make-hash-table))
+(defvar *actor-kinds* (make-hash-table))
 (defvar *blend-params* (make-blending-params))
 (defvar *cube-stream* nil)
 (defvar *daft-frame-counter* 0)
@@ -20,6 +20,5 @@
 (defvar *world-empty-fbo* nil)
 (defvar *world-size* (v! 2048 2048))
 (defvar *world-viewport* (make-viewport *world-size*))
-(defvar *actors-fbo* nil)
 
 ;;------------------------------------------------------------

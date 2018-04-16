@@ -20,4 +20,4 @@
        (spawn! 'foo pos :dir dir))))
 
 (defun hacky-kill ()
-  (clrhash *actors*))
+  (clrhash *actor-kinds*))

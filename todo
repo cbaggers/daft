@@ -1,0 +1,6 @@
+- finish cleanup
+ - rename actors
+ - move visual, tile-count & size from actor to kind
+ - draw-actors-common etc should then take the kind, not a single actor
+- Fix timestep
+ -

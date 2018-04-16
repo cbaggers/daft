@@ -10,8 +10,8 @@
         (%touching-set-p self target))))
 
 (defun %touching-kind-p (self target)
-  (let ((actors (get-actor-kind target)))
-    (loop :for actor :across (actors-current actors)
+  (let ((actors (get-actor-kind-by-name target)))
+    (loop :for actor :across (this-frames-actors actors)
        :when (and (typep actor target)
                   (%touching-p self actor))
        :collect actor)))
@@ -20,9 +20,9 @@
   (let* ((sets (uiop:ensure-list sets))
          (sets (or sets
                    (mapcar
-                    #'actors-current
+                    #'this-frames-actors
                     (alexandria:hash-table-values
-                     *actors*)))))
+                     *actor-kinds*)))))
     (loop :for set :in sets :append
        (loop :for actor :across set
           :when (and (not (eq (slot-value actor 'next)
@@ -41,11 +41,8 @@
 
 (defun coll-with (actor-kind)
   (with-slots (kind id) *self*
-    (with-slots (coll-with) kind
-      (setf (gethash actor-kind coll-with) t))
-    (let ((results
-           (gethash actor-kind
-                    (actors-coll-results kind))))
+    (setf (gethash actor-kind (actors-coll-with kind)) t)
+    (let ((results (gethash actor-kind (collision-results kind))))
       (when (and id results)
         (aref results id)))))
 
