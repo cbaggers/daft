@@ -8,7 +8,7 @@
   (anim-frame :float))
 
 (defstruct-g (collision-info :layout std-430)
-  (actors (:int #.+max-actor-count+)))
+  (ids (:int #.+max-actor-count+)))
 
 ;;------------------------------------------------------------
 
@@ -103,7 +103,7 @@
            (unit-pos (/ vert-world-pos (v! world-size 1 1)))
            (clip-pos (* unit-pos (v! 2 2 1 1)))
            (coll-uv (+ (s~ unit-pos :xy) 0.5)))
-      (atomic-min (aref (collision-info-actors collision)
+      (atomic-min (aref (collision-info-ids collision)
                         gl-instance-id)
                   0)
       (multiple-value-bind (uv-scale uv-offset)
@@ -129,7 +129,7 @@
          (threshold (vec4 0.01 0.01 0.01 0))
          (collision-col (* mask-col (w our-color)))
          (collision-val (step 0.01 (vmax collision-col))))
-    (atomic-add (aref (collision-info-actors collision) id)
+    (atomic-add (aref (collision-info-ids collision) id)
                 (int collision-val))
     (vec4 collision-val)))
 

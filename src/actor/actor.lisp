@@ -50,8 +50,8 @@
 ;;------------------------------------------------------------
 
 (defun reinit-all-actors-of-kind (type-name)
-  (let ((actors (get-actor-kind-by-name type-name)))
-    (loop :for actor :across (this-frames-actors actors) :do
+  (let ((kind (get-actor-kind-by-name type-name)))
+    (loop :for actor :across (this-frames-actors kind) :do
        (reinit-private-state actor)
        (reinit-system-state actor))))
 

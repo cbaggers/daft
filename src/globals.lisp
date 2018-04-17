@@ -6,8 +6,6 @@
 (defparameter *screen-height-in-game-units* 600f0)
 (defvar *actor-kinds* (make-hash-table))
 (defvar *blend-params* (make-blending-params))
-(defvar *cube-stream* nil)
-(defvar *daft-frame-counter* 0)
 (defvar *god* nil)
 (defvar *instanced-cube-stream* nil)
 (defvar *per-actor-c-data* nil)

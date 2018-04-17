@@ -33,6 +33,9 @@
 
 ;;------------------------------------------------------------
 
+(declaim (type (signed-byte 62) *daft-frame-counter*))
+(defvar *daft-frame-counter* 0)
+
 (defun daft (action &optional frames)
   (ecase action
     (:start

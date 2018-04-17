@@ -29,7 +29,7 @@
   (with-fbo-bound (*world-empty-fbo* :attachment-for-size t)
     (loop
        :for kind-name :being :the
-       :hash-keys :of (actors-coll-with actor-kind)
+       :hash-keys :of (kinds-to-test-collision-with actor-kind)
        :do
        (let* ((kind (get-actor-kind-by-name kind-name))
               (coll-mask (collision-sampler kind)))
@@ -54,7 +54,7 @@
                  (setf (gethash kind-name (collision-results actor-kind)) arr
                        results arr)))
            (with-gpu-array-as-c-array (tmp (ssbo-data *ssbo*))
-             (let ((cols (collision-info-actors (aref-c tmp 0))))
+             (let ((cols (collision-info-ids (aref-c tmp 0))))
                (loop :for i :below count :do
                   (setf (aref results i)
                         (> (aref-c cols i) 0))))))))))

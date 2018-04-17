@@ -3,27 +3,31 @@
 ;;------------------------------------------------------------
 
 (defclass actor-kind ()
-  ((name :initarg :name :reader name)
-   (current :initform (make-array 0 :adjustable t :fill-pointer 0)
-            :initarg :current
-            :type (array t (*))
-            :accessor this-frames-actors)
-   (next :initform (make-array 0 :adjustable t :fill-pointer 0)
-         :initarg :next
-         :type (array t (*))
-         :accessor next-frames-actors)
-   (collision-fbo :initform nil
-                  :initarg :collision-fbo
-                  :type (or null fbo)
-                  :accessor collision-fbo)
-   (coll-sampler :initform nil
-                 :initarg :coll-sampler
-                 :type (or null sampler)
-                 :accessor collision-sampler)
-   (coll-with :initform (make-hash-table)
-              :accessor actors-coll-with)
-   (coll-results :initform (make-hash-table)
-                 :accessor collision-results)))
+  ((name
+    :initarg :name
+    :reader name)
+   (current
+    :initform (make-array 0 :adjustable t :fill-pointer 0)
+    :initarg :current
+    :accessor this-frames-actors)
+   (next
+    :initform (make-array 0 :adjustable t :fill-pointer 0)
+    :initarg :next
+    :accessor next-frames-actors)
+   (collision-fbo
+    :initform nil
+    :initarg :collision-fbo
+    :accessor collision-fbo)
+   (collision-sampler
+    :initform nil
+    :initarg :collision-sampler
+    :accessor collision-sampler)
+   (kinds-to-test-collision-with
+    :initform (make-hash-table)
+    :accessor kinds-to-test-collision-with)
+   (collision-results
+    :initform (make-hash-table)
+    :accessor collision-results)))
 
 (defmethod print-object ((obj actor-kind) stream)
   (with-slots (name) obj
@@ -32,11 +36,11 @@
 (defun make-actor-kind ()
   (let ((tex (gen-collision-texture)))
     (make-instance
-     'actors
+     'actor-kind
      :current (make-array 0 :adjustable t :fill-pointer 0)
      :next (make-array 0 :adjustable t :fill-pointer 0)
      :collision-fbo (make-fbo (list 0 tex))
-     :coll-sampler (sample tex))))
+     :collision-sampler (sample tex))))
 
 (defun get-actor-kind-by-name (type)
   (or (gethash type *actor-kinds*)

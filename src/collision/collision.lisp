@@ -41,7 +41,7 @@
 
 (defun coll-with (actor-kind)
   (with-slots (kind id) *self*
-    (setf (gethash actor-kind (actors-coll-with kind)) t)
+    (setf (gethash actor-kind (kinds-to-test-collision-with kind)) t)
     (let ((results (gethash actor-kind (collision-results kind))))
       (when (and id results)
         (aref results id)))))

@@ -3,4 +3,7 @@
  - move visual, tile-count & size from actor to kind
  - draw-actors-common etc should then take the kind, not a single actor
 - Fix timestep
- -
+- Resize
+- Profile
+- define-world (dont jam this all in god actor).. maybe even define-game and
+  have world be some params. God should live on world
