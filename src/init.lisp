@@ -25,7 +25,9 @@
       (setf *instanced-cube-stream*
             (make-buffer-stream (list vert-arr
                                       (cons *per-actor-data* 1))
-                                :index-array index-arr)))))
+                                :index-array index-arr))))
+  (do-hash-vals scene *scenes*
+    (ensure-initialized scene)))
 
 (defun init-pads (ids)
   (setf *sdl2-pads*  (make-array 10 :initial-element nil))
