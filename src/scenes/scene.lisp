@@ -1,5 +1,7 @@
 (in-package :daft)
 
+;;------------------------------------------------------------
+
 (defclass scene ()
   ((name
     :initarg :name
@@ -26,7 +28,7 @@
    :name name
    :size (v! size)
    :viewport (make-viewport size)
-   :empty-fbo (make-fbo (list nil :dimensions size))
+   :empty-fbo nil
    :camera-position camera-position))
 
 (defvar *scenes* (make-hash-table))
@@ -46,7 +48,21 @@
   `(register-scene
     (make-scene ',name ',size ',camera-position)))
 
-#+nil
-(define-scene main-game
-  :size (2048 2048)
-  :camera-position (0 0))
+(defmethod ensure-initialized ((obj scene))
+  (with-slots (empty-fbo viewport) obj
+    (unless empty-fbo
+      (let ((dims (viewport-dimensions viewport)))
+        (setf empty-fbo
+              (make-fbo (list nil :dimensions dims))))))
+  obj)
+
+(defun scene (scene-name)
+  (ensure-initialized
+   (gethash scene-name *scenes*)))
+
+(defun change-scene (scene-name)
+  (let ((scene (gethash scene-name *scenes*)))
+    (assert scene)
+    (setf *current-scene* scene)))
+
+;;------------------------------------------------------------
