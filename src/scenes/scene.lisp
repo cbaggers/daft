@@ -15,28 +15,30 @@
    (empty-fbo
     :initarg :empty-fbo
     :accessor empty-fbo)
-   (camera-position
-    :initarg :camera-position
-    :accessor camera-position)
    (background-color
     :initarg :background-color
     :initform (v! 0.03 0.03 0.05 0)
     :accessor background-color)
+   (camera
+    :initarg :camera
+    :initform (make-camera (v! 0 0))
+    :accessor camera)
    (kinds
     :initform (make-hash-table)
     :accessor kinds)))
 
 (defun make-scene (name size camera-position background-color)
-  (make-instance
-   'scene
-   :name name
-   :size (if size (v! size) (v! 2048 2048))
-   :viewport (make-viewport size)
-   :empty-fbo nil
-   :camera-position camera-position
-   :background-color (if background-color
-                         (v! background-color 0)
-                         (v! 0.03 0.03 0.05 0))))
+  (let ((camera-position (or camera-position '(0 0))))
+    (make-instance
+     'scene
+     :name name
+     :size (if size (v! size) (v! 2048 2048))
+     :viewport (make-viewport size)
+     :empty-fbo nil
+     :camera (make-camera (v! camera-position))
+     :background-color (if background-color
+                           (v! background-color 0)
+                           (v! 0.03 0.03 0.05 0)))))
 
 (defvar *scenes* (make-hash-table))
 

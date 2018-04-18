@@ -2,12 +2,14 @@
 
 ;;------------------------------------------------------------
 
-(defun draw-actors-common (actor-kind count height ratio)
+(defun draw-actors-common (actor-kind count height ratio
+                           &optional (offset-v2 (v! 0 0)))
   (with-slots (visual tile-count size) actor-kind
     (destructuring-bind (tx ty) tile-count
       (with-blending *blend-params*
         (with-instances count
           (map-g #'instanced-cube *instanced-cube-stream*
+                 :offset offset-v2
                  :screen-height height
                  :screen-ratio ratio
                  :size size
@@ -15,11 +17,12 @@
                  :tile-count-x tx
                  :tile-count-y ty))))))
 
-(defun draw-actors-to-screen (actor-kind count res)
+(defun draw-actors-to-screen (scene actor-kind count res)
   (draw-actors-common actor-kind
                       count
                       *screen-height-in-game-units*
-                      (/ (x res) (y res))))
+                      (/ (x res) (y res))
+                      (pos (camera scene))))
 
 (defun draw-actors-collision-mask (scene actor-kind count res)
   (declare (ignore res))

@@ -51,7 +51,8 @@
           (when (> count 0)
             (push-g (subseq-c c-arr 0 count)
                     (subseq-g *per-actor-data* 0 count))
-            (draw-actors-to-screen actor-kind
+            (draw-actors-to-screen scene
+                                   actor-kind
                                    count
                                    res)
             (draw-actors-collision-mask scene

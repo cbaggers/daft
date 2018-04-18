@@ -21,6 +21,7 @@
                (:file "src/media/images")
                (:file "src/render")
 
+               (:file "src/camera/camera")
                (:file "src/scenes/scene")
                (:file "src/actor-kind/actor-kind")
 
