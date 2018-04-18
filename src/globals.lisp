@@ -15,5 +15,6 @@
 (defvar *ssbo* nil)
 (defvar *default-z-offset* -10f0)
 (defvar *current-scene* nil)
+(defvar *audio-initialized* nil)
 
 ;;------------------------------------------------------------

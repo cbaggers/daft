@@ -14,8 +14,8 @@
 ;;------------------------------------------------------------
 
 (defun init ()
-  (unless *sdl2-pads*
-    (init-pads '(0)))
+  (init-audio)
+  (init-pads)
   (unless *ssbo*
     (setf *ssbo* (make-ssbo nil 'collision-info)))
   (unless *instanced-cube-stream*
@@ -28,14 +28,5 @@
                                 :index-array index-arr))))
   (do-hash-vals scene *scenes*
     (ensure-initialized scene)))
-
-(defun init-pads (ids)
-  (setf *sdl2-pads*  (make-array 10 :initial-element nil))
-  (sdl2-game-controller-db:load-db)
-  (loop :for id :in ids :do
-     (unless (aref *sdl2-pads* id)
-       (setf (aref *sdl2-pads* id)
-             (sdl2:game-controller-open id))))
-  (skitter.sdl2:enable-background-joystick-events))
 
 ;;------------------------------------------------------------

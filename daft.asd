@@ -13,12 +13,14 @@
                :temporal-functions
                :with-setf
                :sdl2-game-controller-db
-               :alexandria)
+               :alexandria
+               :sdl2-mixer)
   :components ((:file "package")
                (:file "src/utils")
                (:file "src/globals")
                (:file "src/names")
                (:file "src/media/images")
+               (:file "src/media/audio")
                (:file "src/render")
 
                (:file "src/camera/camera")
