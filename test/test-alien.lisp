@@ -25,7 +25,8 @@
 
 (define-actor spin-emit ((:visual "test/bullet.png")
                          (:noisy nil)
-                         (fire (make-stepper (seconds 0.01))))
+                         (fire (make-stepper (seconds 0.1)
+                                             (seconds 0.1))))
   (:main
    (compass-dir-move (v! 0 -3))
    (turn-left 4)
