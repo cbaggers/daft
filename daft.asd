@@ -23,6 +23,7 @@
 
                (:file "src/camera/camera")
                (:file "src/scenes/scene")
+               (:file "src/scenes/default-scene")
                (:file "src/actor-kind/actor-kind")
 
                (:file "src/actor/public-state")

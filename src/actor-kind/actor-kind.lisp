@@ -54,9 +54,10 @@
               (make-actor-kind scene type)))))
 
 (defun gen-collision-texture (scene)
-  (make-texture
-   nil
-   :dimensions (size scene)
-   :element-type :uint8-vec4))
+  (let ((vp (viewport scene)))
+    (make-texture
+     nil
+     :dimensions (viewport-dimensions vp)
+     :element-type :uint8-vec4)))
 
 ;;------------------------------------------------------------
