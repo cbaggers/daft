@@ -14,15 +14,15 @@
 ;;------------------------------------------------------------
 
 (defun init ()
+  (unless *current-scene*
+    (setf *current-scene*
+          (register-scene (make-scene :test '(2048 2048) '(0 0)))))
   (unless *sdl2-pads*
     (init-pads '(0)))
   (unless *ssbo*
     (setf *ssbo* (make-ssbo nil 'collision-info)))
   (unless *instanced-cube-stream*
     (init-actor-data)
-    (let ((world-dim (viewport-dimensions *world-viewport*)))
-      (setf *world-empty-fbo*
-            (make-fbo `(nil :dimensions ,world-dim))))
     (destructuring-bind (vert-arr index-arr)
         (nineveh.mesh.data.primitives:cube-gpu-arrays)
       (setf *instanced-cube-stream*

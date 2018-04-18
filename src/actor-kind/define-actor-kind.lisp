@@ -16,13 +16,18 @@
   (values (remove-if-not #'keywordp vars :key #'first)
           (remove-if #'keywordp vars :key #'first)))
 
+(defun kind-class-name (kind-name)
+  (intern (format nil "~a-KIND" kind-name)
+          (symbol-package kind-name)))
+
 (defun %define-actor (name values states)
   (assert states)
   (multiple-value-bind (keyword-vars private-vars)
       (seperate-var-types values)
     (let* ((state-funcs (gen-state-funcs name states private-vars))
            (state-names (mapcar #'first states))
-           (default-state (first state-names)))
+           (default-state (first state-names))
+           (class-name (kind-class-name name)))
       (assert (every #'keywordp state-names))
       (destructuring-bind (&key visual tile-count noisy)
           (reduce #'append keyword-vars)
@@ -34,22 +39,25 @@
                        (= 2 (length tile-count))
                        (every #'numberp tile-count)))
           `(progn
+             (defclass ,class-name (actor-kind)
+               ((name :initform ',name)))
              ,(gen-actor-class name private-vars)
              ,(gen-spawn name private-vars noisy default-state)
              ,(gen-update-method name state-funcs state-names)
              ,@state-funcs
-             ,@(gen-reinit-methods name private-vars visual tile-count
-                                   state-names)
+             ,@(gen-reinit-methods name class-name private-vars visual
+                                   tile-count state-names)
              ,(gen-change-state name state-names)
              (push (lambda () (reinit-all-actors-of-kind ',name))
                    *tasks-for-next-frame*)))))))
 
 (defun gen-actor-class (name private-vars)
   `(defclass ,name (actor)
-     ,(loop
-         :for (var-name) :in private-vars
-         :for kwd := (intern (symbol-name var-name) :keyword)
-         :collect `(,var-name :initarg ,kwd))))
+     ((name :initform ',name)
+      ,@(loop
+           :for (var-name) :in private-vars
+           :for kwd := (intern (symbol-name var-name) :keyword)
+           :collect `(,var-name :initarg ,kwd)))))
 
 (defun gen-spawn (name private-vars noisy default-state)
   (let* ((key-args (loop :for (name val) :in private-vars :collect
@@ -57,10 +65,11 @@
     `(defmethod spawn ((kwd-kind-name (eql ',name)) pos
                        &key ,@key-args)
        (declare (ignore kwd-kind-name))
-       (let* ((creator *self*)
+       (let* ((scene *current-scene*)
+              (creator *self*)
               (actor (make-instance ',name))
               (*self* actor)
-              (kind-obj (get-actor-kind-by-name ',name)))
+              (kind-obj (get-actor-kind-by-name scene ',name)))
          (with-slots (current-public-state
                       next-public-state
                       debug-name
@@ -83,9 +92,19 @@
              (format t "~%; ~a has spawned!" debug-name))
            actor)))))
 
-(defun gen-reinit-methods (name private-vars visual tile-count state-names)
+(defgeneric reinit-kind (kind))
+
+(defun gen-reinit-methods (name class-name private-vars visual
+                           tile-count state-names)
   (let ((new-len (reduce #'* tile-count)))
-    `((defmethod reinit-private-state ((actor ,name))
+    `((defmethod reinit-kind ((kind ,class-name))
+        (with-slots (visual size tile-count anim-length) kind
+          (setf visual ,(when visual `(load-tex ,visual)))
+          (setf size (tile-size visual ',tile-count))
+          (setf tile-count ',tile-count)
+          (setf anim-length ,new-len))
+        kind)
+      (defmethod reinit-private-state ((actor ,name))
         (let ((*self* actor))
           ,@(loop
                :for (slot-name new-val dont-change) :in private-vars
@@ -94,17 +113,7 @@
                                ,new-val))))
       (defmethod reinit-system-state ((actor ,name))
         (let ((*self* actor))
-          (with-slots (visual
-                       state
-                       tile-count
-                       anim-length
-                       anim-frame
-                       size)
-              actor
-            (setf visual ,(when visual `(load-tex ,visual)))
-            (setf size (tile-size visual ',tile-count))
-            (setf tile-count ',tile-count)
-            (setf anim-length ,new-len)
+          (with-slots (state tile-count anim-frame) actor
             (setf anim-frame (if (< anim-frame ,new-len)
                                  anim-frame
                                  0f0))

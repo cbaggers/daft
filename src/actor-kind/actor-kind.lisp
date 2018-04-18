@@ -27,29 +27,36 @@
     :accessor kinds-to-test-collision-with)
    (collision-results
     :initform (make-hash-table)
-    :accessor collision-results)))
+    :accessor collision-results)
+   visual
+   tile-count
+   anim-length
+   size))
 
 (defmethod print-object ((obj actor-kind) stream)
   (with-slots (name) obj
     (format stream "#<ACTOR-KIND :NAME ~a>" name)))
 
-(defun make-actor-kind ()
-  (let ((tex (gen-collision-texture)))
-    (make-instance
-     'actor-kind
-     :current (make-array 0 :adjustable t :fill-pointer 0)
-     :next (make-array 0 :adjustable t :fill-pointer 0)
-     :collision-fbo (make-fbo (list 0 tex))
-     :collision-sampler (sample tex))))
+(defun make-actor-kind (scene name)
+  (let ((tex (gen-collision-texture scene)))
+    (reinit-kind
+     (make-instance
+      (kind-class-name name)
+      :current (make-array 0 :adjustable t :fill-pointer 0)
+      :next (make-array 0 :adjustable t :fill-pointer 0)
+      :collision-fbo (make-fbo (list 0 tex))
+      :collision-sampler (sample tex)))))
 
-(defun get-actor-kind-by-name (type)
-  (or (gethash type *actor-kinds*)
-      (setf (gethash type *actor-kinds*) (make-actor-kind))))
+(defun get-actor-kind-by-name (scene type)
+  (with-slots (kinds) scene
+    (or (gethash type kinds)
+        (setf (gethash type kinds)
+              (make-actor-kind scene type)))))
 
-(defun gen-collision-texture ()
+(defun gen-collision-texture (scene)
   (make-texture
    nil
-   :dimensions (viewport-dimensions *world-viewport*)
+   :dimensions (size scene)
    :element-type :uint8-vec4))
 
 ;;------------------------------------------------------------

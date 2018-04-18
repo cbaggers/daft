@@ -10,18 +10,14 @@
    current-public-state
    next-public-state
    state
-   visual
-   tile-count
-   anim-length
-   size
-   kind))
+   (kind :accessor kind)))
 
 (defmethod print-object ((actor actor) stream)
   (format stream "#<~a ~a>" (type-of actor)
           (slot-value actor 'debug-name)))
 
 (defun radius (actor)
-  (with-slots (visual) actor
+  (with-slots (visual) (kind actor)
     (/ (x (resolution (sampler-texture visual))) 2f0)))
 
 ;;------------------------------------------------------------
@@ -50,7 +46,9 @@
 ;;------------------------------------------------------------
 
 (defun reinit-all-actors-of-kind (type-name)
-  (let ((kind (get-actor-kind-by-name type-name)))
+  (let* ((scene *current-scene*)
+         (kind (get-actor-kind-by-name scene type-name)))
+    (reinit-kind kind)
     (loop :for actor :across (this-frames-actors kind) :do
        (reinit-private-state actor)
        (reinit-system-state actor))))

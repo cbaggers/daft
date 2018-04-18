@@ -16,18 +16,19 @@
 
   ;; I was lazy so we are checking window size
   ;; every frame
-  (let ((res (surface-resolution
+  (let ((scene *current-scene*)
+        (res (surface-resolution
               (current-surface
                (cepl-context)))))
     (setf (viewport-resolution (current-viewport)) res)
     (clear)
-    (update-actor-kinds)
-    (draw-actor-kinds res *instanced-cube-stream*)
+    (update-actor-kinds scene)
+    (draw-actor-kinds scene res *instanced-cube-stream*)
     (livesupport:continuable
       (livesupport:update-repl-link))
     (ensure-god)
     (run-end-of-frame-tasks)
-    (rotate-actor-kind-state)
+    (rotate-actor-kind-state scene)
     (swap)
     (decay-events)))
 

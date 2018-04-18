@@ -1,6 +1,6 @@
 (in-package :daft)
 
-(setf *screen-height-in-game-units* 1200f0)
+(setf *screen-height-in-game-units* 800f0)
 
 (define-god ((spawn-counter (make-stepper (seconds 10)
                                           (seconds 10)))

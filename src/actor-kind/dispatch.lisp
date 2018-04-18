@@ -2,8 +2,8 @@
 
 ;;------------------------------------------------------------
 
-(defun draw-actors-common (count actor height ratio)
-  (with-slots (visual tile-count size) actor
+(defun draw-actors-common (actor-kind count height ratio)
+  (with-slots (visual tile-count size) actor-kind
     (destructuring-bind (tx ty) tile-count
       (with-blending *blend-params*
         (with-instances count
@@ -15,25 +15,35 @@
                  :tile-count-x tx
                  :tile-count-y ty))))))
 
-(defun draw-actors-to-screen (count actor res)
-  (draw-actors-common
-   count actor *screen-height-in-game-units* (/ (x res) (y res))))
+(defun draw-actors-to-screen (actor-kind count res)
+  (draw-actors-common actor-kind
+                      count
+                      *screen-height-in-game-units*
+                      (/ (x res) (y res))))
 
-(defun draw-actors-collision-mask (count actor res)
+(defun draw-actors-collision-mask (scene actor-kind count res)
   (declare (ignore res))
-  (with-fbo-bound ((collision-fbo (slot-value actor 'kind)))
-    (draw-actors-common count actor (y *world-size*) 1f0)))
+  (with-fbo-bound ((collision-fbo actor-kind))
+    (draw-actors-common actor-kind
+                        count
+                        (y (size scene))
+                        1f0)))
 
-(defun run-collision-checks (instanced-cube-stream count actor res actor-kind)
+(defun run-collision-checks (scene
+                             actor-kind
+                             count
+                             instanced-cube-stream
+                             res)
   (declare (ignore res))
-  (with-fbo-bound (*world-empty-fbo* :attachment-for-size t)
+  (with-fbo-bound ((empty-fbo scene)
+                   :attachment-for-size t)
     (loop
        :for kind-name :being :the
        :hash-keys :of (kinds-to-test-collision-with actor-kind)
        :do
-       (let* ((kind (get-actor-kind-by-name kind-name))
+       (let* ((kind (get-actor-kind-by-name scene kind-name))
               (coll-mask (collision-sampler kind)))
-         (with-slots (visual tile-count size) actor
+         (with-slots (visual tile-count size) actor-kind
            (destructuring-bind (tx ty) tile-count
              (with-instances count
                (map-g #'check-collisions-with
@@ -43,16 +53,21 @@
                       :tile-count-x tx
                       :tile-count-y ty
                       :coll-mask coll-mask
-                      :world-size *world-size*
+                      :world-size (size scene)
                       :collision *ssbo*))))
-         (let ((results (gethash kind-name (collision-results actor-kind))))
+         (let ((results (gethash kind-name (collision-results
+                                            actor-kind))))
            (if results
                (ensure-array-size results count)
-               (let ((arr (make-array count :adjustable t :fill-pointer t
+               (let ((arr (make-array count
+                                      :adjustable t
+                                      :fill-pointer t
                                       :initial-element nil
                                       :element-type 'boolean)))
-                 (setf (gethash kind-name (collision-results actor-kind)) arr
-                       results arr)))
+                 (setf (gethash kind-name
+                                (collision-results actor-kind))
+                       arr)
+                 (setf results arr)))
            (with-gpu-array-as-c-array (tmp (ssbo-data *ssbo*))
              (let ((cols (collision-info-ids (aref-c tmp 0))))
                (loop :for i :below count :do

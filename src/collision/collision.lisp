@@ -4,25 +4,26 @@
 
 (defun touching-p (&optional set-of-actors/actor-kind)
   (let ((self *self*)
+        (scene *current-scene*)
         (target set-of-actors/actor-kind))
     (if (and target (symbolp target))
-        (%touching-kind-p self target)
-        (%touching-set-p self target))))
+        (%touching-kind-p scene self target)
+        (%touching-set-p scene self target))))
 
-(defun %touching-kind-p (self target)
-  (let ((actors (get-actor-kind-by-name target)))
+(defun %touching-kind-p (scene self target)
+  (let ((actors (get-actor-kind-by-name scene target)))
     (loop :for actor :across (this-frames-actors actors)
        :when (and (typep actor target)
                   (%touching-p self actor))
        :collect actor)))
 
-(defun %touching-set-p (self sets)
+(defun %touching-set-p (scene self sets)
   (let* ((sets (uiop:ensure-list sets))
          (sets (or sets
                    (mapcar
                     #'this-frames-actors
                     (alexandria:hash-table-values
-                     *actor-kinds*)))))
+                     (kinds scene))))))
     (loop :for set :in sets :append
        (loop :for actor :across set
           :when (and (not (eq (slot-value actor 'next)
