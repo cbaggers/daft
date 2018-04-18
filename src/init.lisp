@@ -14,9 +14,6 @@
 ;;------------------------------------------------------------
 
 (defun init ()
-  (unless *current-scene*
-    (setf *current-scene*
-          (register-scene (make-scene :test '(2048 2048) '(0 0)))))
   (unless *sdl2-pads*
     (init-pads '(0)))
   (unless *ssbo*

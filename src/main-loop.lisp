@@ -20,6 +20,7 @@
         (res (surface-resolution
               (current-surface
                (cepl-context)))))
+    (setf (clear-color) (slot-value scene 'background-color))
     (setf (viewport-resolution (current-viewport)) res)
     (clear)
     (update-actor-kinds scene)
