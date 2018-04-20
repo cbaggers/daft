@@ -25,8 +25,8 @@
 
 (define-actor spin-emit ((:visual "test/bullet.png")
                          (:noisy nil)
-                         (fire (make-stepper (seconds 0.1)
-                                             (seconds 0.1))))
+                         (fire (make-stepper (seconds 0.04)
+                                             (seconds 0.04))))
   (:main
    (compass-dir-move (v! 0 -3))
    (turn-left 4)
@@ -70,8 +70,6 @@
                                         (seconds 0.1))))
   (:main
    (set-angle-from-analog 0)
-   ;; (when (coll-with 'alien)
-   ;;   (print "blerp"))
    (when (and (or (mouse-button (mouse) mouse.left)
                   (pad-button 0))
               (funcall fire))

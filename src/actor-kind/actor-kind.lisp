@@ -34,6 +34,14 @@
    (per-actor-c-len
     :initform 0
     :accessor per-actor-c-len)
+   (static-p
+    :initarg :static-p
+    :initform nil
+    :accessor static-p)
+   (dirty-p
+    :initarg :dirty-p
+    :initform t
+    :accessor dirty-p)
    visual
    tile-count
    anim-length
