@@ -34,6 +34,14 @@
    (per-actor-c-len
     :initform 0
     :accessor per-actor-c-len)
+   (static-p
+    :initarg :static-p
+    :initform nil
+    :accessor static-p)
+   (dirty-p
+    :initarg :dirty-p
+    :initform t
+    :accessor dirty-p)
    visual
    tile-count
    anim-length
@@ -67,5 +75,10 @@
      nil
      :dimensions (viewport-dimensions vp)
      :element-type :uint8-vec4)))
+
+(defun needs-update-p (actor-kind)
+  (let ((skip-update (and (static-p actor-kind)
+                          (not (dirty-p actor-kind)))))
+    (not skip-update)))
 
 ;;------------------------------------------------------------

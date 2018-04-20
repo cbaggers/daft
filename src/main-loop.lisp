@@ -27,6 +27,7 @@
     (draw-actor-kinds scene res *instanced-cube-stream*)
     (livesupport:continuable
       (livesupport:update-repl-link))
+    (mark-actors-clean scene)
     (ensure-god)
     (run-end-of-frame-tasks)
     (rotate-actor-kind-state scene)

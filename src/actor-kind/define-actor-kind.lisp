@@ -21,13 +21,13 @@
           (symbol-package kind-name)))
 
 (defun %define-actor (name values states)
-  (assert states)
   (multiple-value-bind (keyword-vars private-vars)
       (seperate-var-types values)
     (let* ((state-funcs (gen-state-funcs name states private-vars))
            (state-names (mapcar #'first states))
            (default-state (first state-names))
-           (class-name (kind-class-name name)))
+           (class-name (kind-class-name name))
+           (static-p (null state-names)))
       (assert (every #'keywordp state-names))
       (destructuring-bind (&key visual tile-count noisy)
           (reduce #'append keyword-vars)
@@ -40,13 +40,15 @@
                        (every #'numberp tile-count)))
           `(progn
              (defclass ,class-name (actor-kind)
-               ((name :initform ',name)))
+               ((name :initform ',name)
+                (static-p :initform ,static-p)))
              ,(gen-actor-class name private-vars)
-             ,(gen-spawn name private-vars noisy default-state)
-             ,(gen-update-method name state-funcs state-names)
+             ,(gen-spawn name private-vars noisy default-state static-p)
+             ,(unless static-p
+                (gen-update-method name state-funcs state-names))
              ,@state-funcs
              ,@(gen-reinit-methods name class-name private-vars visual
-                                   tile-count state-names)
+                                   tile-count state-names static-p)
              ,(gen-change-state name state-names)
              (push (lambda () (reinit-all-actors-of-kind ',name))
                    *tasks-for-next-frame*)))))))
@@ -59,7 +61,7 @@
            :for kwd := (intern (symbol-name var-name) :keyword)
            :collect `(,var-name :initarg ,kwd)))))
 
-(defun gen-spawn (name private-vars noisy default-state)
+(defun gen-spawn (name private-vars noisy default-state static-p)
   (let* ((key-args (loop :for (name val) :in private-vars :collect
                       `(,name nil ,(gensym)))))
     `(defmethod spawn ((kwd-kind-name (eql ',name)) pos
@@ -76,6 +78,7 @@
                       state
                       kind)
              actor
+           (setf (dirty-p kind-obj) t)
            (setf state ,default-state)
            (setf kind kind-obj)
            (setf current-public-state (make-public-state pos creator))
@@ -87,7 +90,9 @@
                 :collect
                 `(setf (slot-value actor ',slot-name)
                        (if ,was-set ,arg-name ,val)))
-           (vector-push-extend actor (next-frames-actors kind-obj))
+           (vector-push-extend actor ,(if static-p
+                                          `(this-frames-actors kind-obj)
+                                          `(next-frames-actors kind-obj)))
            (when ,noisy
              (format t "~%; ~a has spawned!" debug-name))
            actor)))))
@@ -95,10 +100,18 @@
 (defgeneric reinit-kind (kind))
 
 (defun gen-reinit-methods (name class-name private-vars visual
-                           tile-count state-names)
+                           tile-count state-names static-p)
   (let ((new-len (reduce #'* tile-count)))
     `((defmethod reinit-kind ((kind ,class-name))
-        (with-slots (visual size tile-count anim-length) kind
+        (with-slots (visual size tile-count anim-length static-p dirty-p
+                            current next)
+            kind
+          (when (and static-p (not ,static-p))
+            ;; transform from static to dynamic
+            (loop :for actor :across current :do
+               (vector-push-extend actor next)))
+          (setf static-p ,static-p)
+          (setf dirty-p t)
           (setf visual ,(when visual `(load-tex ,visual)))
           (setf size (tile-size visual ',tile-count))
           (setf tile-count ',tile-count)
