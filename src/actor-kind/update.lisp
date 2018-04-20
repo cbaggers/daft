@@ -17,7 +17,10 @@
          (update actor)
          (if (slot-value actor 'dead)
              (free-actor actor)
-             (enqueue-actor-for-next-frame actor))))))
+             (enqueue-actor-for-next-frame actor))))
+    ;;
+    (do-hash-vals actor-kind (kinds scene)
+      (write-per-actor-data actor-kind))))
 
 (defun reset-surviving-actor-array (actor-kind)
   (setf (fill-pointer (next-frames-actors actor-kind)) 0))
@@ -26,9 +29,9 @@
   (with-slots (kind) actor
     (vector-push-extend actor (next-frames-actors kind))))
 
-(defun write-per-actor-data (actor-kind per-actor-c-data)
+(defun write-per-actor-data (actor-kind)
   (let ((this-frames-actors (this-frames-actors actor-kind))
-        (c-arr per-actor-c-data)
+        (c-arr (per-actor-c-data actor-kind))
         (count 0))
     (when (slot-value actor-kind 'visual)
       (loop
@@ -38,32 +41,33 @@
            (write-actor-data actor c-arr count)
            (setf (id actor) count)
            (incf count))))
-    count))
+    (setf (per-actor-c-len actor-kind) count)
+    actor-kind))
 
 (defun draw-actor-kinds (scene res instanced-cube-stream)
   (with-setf* ((depth-test-function) nil
                (clear-color) (v! 0 0 0 0))
     (do-hash-vals actor-kind (kinds scene)
-      (let ((kind-collision-fbo (collision-fbo actor-kind)))
+      (let* ((kind-collision-fbo (collision-fbo actor-kind))
+             (c-arr (per-actor-c-data actor-kind))
+             (count (per-actor-c-len actor-kind)))
         (clear-fbo kind-collision-fbo)
-        (let* ((c-arr *per-actor-c-data*)
-               (count (write-per-actor-data actor-kind c-arr)))
-          (when (> count 0)
-            (push-g (subseq-c c-arr 0 count)
-                    (subseq-g *per-actor-data* 0 count))
-            (draw-actors-to-screen scene
-                                   actor-kind
-                                   count
-                                   res)
-            (draw-actors-collision-mask scene
-                                        actor-kind
-                                        count
-                                        res)
-            (run-collision-checks scene
-                                  actor-kind
-                                  count
-                                  instanced-cube-stream
-                                  res)))))))
+        (when (> count 0)
+          (push-g (subseq-c c-arr 0 count)
+                  (subseq-g *per-actor-data* 0 count))
+          (draw-actors-to-screen scene
+                                 actor-kind
+                                 count
+                                 res)
+          (draw-actors-collision-mask scene
+                                      actor-kind
+                                      count
+                                      res)
+          (run-collision-checks scene
+                                actor-kind
+                                count
+                                instanced-cube-stream
+                                res))))))
 
 (defun rotate-actor-kind-state (scene)
   (do-hash-vals actor-kind (kinds scene)

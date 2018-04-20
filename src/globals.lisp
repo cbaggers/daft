@@ -7,7 +7,6 @@
 (defvar *blend-params* (make-blending-params))
 (defvar *god* nil)
 (defvar *instanced-cube-stream* nil)
-(defvar *per-actor-c-data* nil)
 (defvar *per-actor-data* nil)
 (defvar *sdl2-pads* nil)
 (defvar *self*)

@@ -6,10 +6,7 @@
   (unless *per-actor-data*
     (setf *per-actor-data*
           (make-gpu-array nil :element-type 'per-actor-data
-                          :dimensions +max-actor-count+))
-    (setf *per-actor-c-data*
-          (make-c-array nil :element-type 'per-actor-data
-                        :dimensions +max-actor-count+))))
+                          :dimensions +max-actor-count+))))
 
 ;;------------------------------------------------------------
 

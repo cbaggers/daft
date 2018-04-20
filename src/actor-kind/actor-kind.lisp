@@ -28,6 +28,12 @@
    (collision-results
     :initform (make-hash-table)
     :accessor collision-results)
+   (per-actor-c-data
+    :initarg :per-actor-c-data
+    :accessor per-actor-c-data)
+   (per-actor-c-len
+    :initform 0
+    :accessor per-actor-c-len)
    visual
    tile-count
    anim-length
@@ -45,7 +51,9 @@
       :current (make-array 0 :adjustable t :fill-pointer 0)
       :next (make-array 0 :adjustable t :fill-pointer 0)
       :collision-fbo (make-fbo (list 0 tex))
-      :collision-sampler (sample tex)))))
+      :collision-sampler (sample tex)
+      :per-actor-c-data (make-c-array nil :element-type 'per-actor-data
+                                      :dimensions +max-actor-count+)))))
 
 (defun get-actor-kind-by-name (scene type)
   (with-slots (kinds) scene

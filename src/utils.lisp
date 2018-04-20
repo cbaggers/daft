@@ -14,6 +14,14 @@
 
 ;;------------------------------------------------------------
 
+(defmacro do-hash-keys (var hashtable &body body)
+  (let ((val (gensym)))
+    `(maphash
+      (lambda (,var ,val)
+        (declare (ignore ,val))
+        ,@body)
+      ,hashtable)))
+
 (defmacro do-hash-vals (var hashtable &body body)
   (let ((key (gensym)))
     `(maphash

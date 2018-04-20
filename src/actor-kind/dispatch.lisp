@@ -40,10 +40,7 @@
   (declare (ignore res))
   (with-fbo-bound ((empty-fbo scene)
                    :attachment-for-size t)
-    (loop
-       :for kind-name :being :the
-       :hash-keys :of (kinds-to-test-collision-with actor-kind)
-       :do
+    (do-hash-keys kind-name (kinds-to-test-collision-with actor-kind)
        (let* ((kind (get-actor-kind-by-name scene kind-name))
               (coll-mask (collision-sampler kind)))
          (with-slots (visual tile-count size) actor-kind
