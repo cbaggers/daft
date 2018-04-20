@@ -6,6 +6,7 @@
 - change from cube to quad
 - user api for camera
 - multiple cameras
+- customize fragment shader per actor
 
 - Fix timestep
 - Profile
