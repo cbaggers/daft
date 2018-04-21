@@ -60,6 +60,7 @@
    :turn-right
    :turn-towards
    :kill-actor-kind!
+   :depth
    :*god*
    :*current-scene*
    :*daft-frame-counter*

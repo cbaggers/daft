@@ -6,17 +6,19 @@
   ((pos :initform (v! 0 0 0) :initarg :pos)
    (rot :initform 0f0 :initarg :rot)))
 
-(defun make-public-state (&optional start-pos creator)
+(defun make-public-state (&optional start-pos creator depth)
   (let ((state (make-instance 'public-state)))
     (when (and start-pos creator)
-      (let ((creator-pos (%pos creator))
-            (creator-rot (%rot creator)))
+      (let* ((creator-pos (%pos creator))
+             (creator-rot (%rot creator))
+             (offset (m3:*v (m3:rotation-z creator-rot)
+                            (v! (x start-pos)
+                                (y start-pos)
+                                0))))
         (with-slots (pos rot) state
-          (setf pos (v3:+ creator-pos
-                           (m3:*v (m3:rotation-z creator-rot)
-                                  (v! (x start-pos)
-                                      (y start-pos)
-                                      *default-z-offset*)))
+          (setf pos (v3:make (+ (x creator-pos) (x offset))
+                             (+ (y creator-pos) (y offset))
+                             depth)
                 rot creator-rot))))
     state))
 

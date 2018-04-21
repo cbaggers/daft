@@ -47,6 +47,7 @@
                (:file "src/user-api/movement-and-orientation")
                (:file "src/user-api/input")
                (:file "src/user-api/frame-control")
+               (:file "src/user-api/depth")
 
                (:file "src/collision/collision")
                (:file "src/debug/debug")))

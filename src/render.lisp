@@ -58,8 +58,11 @@
                           (* (y vpos) ca)
                           (- (y offset)))
                        (z vpos)))
-             (game-v4 (+ (v! vpos 1)
-                         (v! pos 0)))
+             (game-v4 (v! (+ vpos
+                             (v! (x pos)
+                                 (y pos)
+                                 (1- (* (z pos) 0.001))))
+                          1))
              (gv4 (vert-game-units-to-gl game-v4
                                          screen-height
                                          screen-ratio)))
@@ -73,7 +76,11 @@
                    (uv-offset :vec2)
                    &uniform
                    (sam :sampler-2d))
-  (texture sam (+ (* uv uv-scale) uv-offset)))
+  (let ((col (texture sam (+ (* uv uv-scale) uv-offset)))
+        (nasty-discard-threshold 0.01))
+    (when (< (w col) nasty-discard-threshold)
+      (discard))
+    col))
 
 (defpipeline-g instanced-cube ()
   :vertex (icube-vs g-pnt per-actor-data)

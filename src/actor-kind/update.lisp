@@ -47,8 +47,7 @@
     actor-kind))
 
 (defun draw-actor-kinds (scene res instanced-cube-stream)
-  (with-setf* ((depth-test-function) nil
-               (clear-color) (v! 0 0 0 0))
+  (with-setf* ((clear-color) (v! 0 0 0 0))
     (do-hash-vals actor-kind (kinds scene)
       (with-slots (collision-fbo per-actor-c-data per-actor-c-len dirty-p)
           actor-kind

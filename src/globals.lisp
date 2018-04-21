@@ -12,7 +12,7 @@
 (defvar *self*)
 (defvar *tasks-for-next-frame* nil)
 (defvar *ssbo* nil)
-(defvar *default-z-offset* -10f0)
+(defvar *default-depth* 100f0)
 (defvar *current-scene* nil)
 (defvar *audio-initialized* nil)
 (defvar *system-hack* :daft)

@@ -29,10 +29,15 @@
            (class-name (kind-class-name name))
            (static-p (null state-names)))
       (assert (every #'keywordp state-names))
-      (destructuring-bind (&key visual tile-count noisy)
+      (destructuring-bind (&key visual tile-count noisy default-depth)
           (reduce #'append keyword-vars)
         (assert (member noisy '(t nil)))
-        (let ((tile-count (if (numberp tile-count)
+        (assert (or (null default-depth) (numberp default-depth)))
+        (let ((default-depth (clamp 0f0
+                                    100f0
+                                    (float (or default-depth *default-depth*)
+                                           0f0)))
+              (tile-count (if (numberp tile-count)
                               (list tile-count 1)
                               (or tile-count '(1 1)))))
           (assert (and (listp tile-count)
@@ -43,7 +48,8 @@
                ((name :initform ',name)
                 (static-p :initform ,static-p)))
              ,(gen-actor-class name private-vars)
-             ,(gen-spawn name private-vars noisy default-state static-p)
+             ,(gen-spawn name private-vars noisy default-state static-p
+                         default-depth)
              ,(unless static-p
                 (gen-update-method name state-funcs state-names))
              ,@state-funcs
@@ -61,7 +67,8 @@
            :for kwd := (intern (symbol-name var-name) :keyword)
            :collect `(,var-name :initarg ,kwd)))))
 
-(defun gen-spawn (name private-vars noisy default-state static-p)
+(defun gen-spawn (name private-vars noisy default-state static-p
+                  default-depth)
   (let* ((key-args (loop :for (name val) :in private-vars :collect
                       `(,name nil ,(gensym)))))
     `(defmethod spawn ((kwd-kind-name (eql ',name)) pos
@@ -81,7 +88,9 @@
            (setf (dirty-p kind-obj) t)
            (setf state ,default-state)
            (setf kind kind-obj)
-           (setf current-public-state (make-public-state pos creator))
+           (setf current-public-state (make-public-state pos
+                                                         creator
+                                                         ,default-depth))
            (setf next-public-state (make-public-state))
            (reinit-system-state actor)
            ,@(loop
