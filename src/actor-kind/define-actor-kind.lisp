@@ -127,7 +127,7 @@
             ;; transform from static to dynamic
             (loop :for actor :across current :do
                (vector-push-extend actor next)))
-          (setf origin (v! ',origin))
+          (setf origin (v! ',origin 0))
           (setf static-p ,static-p)
           (setf dirty-p t)
           (setf visual

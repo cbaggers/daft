@@ -39,20 +39,21 @@
 
 (declaim (type (signed-byte 62) *daft-frame-counter*))
 (defvar *daft-frame-counter* 0)
+(defvar *frame-id* 0)
 
-(defun daft (action &optional frames)
+(defun daft (action &optional (frames -1))
   (ecase action
     (:start
      (if (= *daft-frame-counter* 0)
          (progn
-           (setf *daft-frame-counter* (or frames -1))
+           (setf *daft-frame-counter* frames)
            (format t "~%- starting ~a -" 'daft)
            (unwind-protect
                 (progn
                   (when (cepl.lifecycle:uninitialized-p) (repl))
-                  (let ((on-start #'init))
-                    (when on-start (funcall on-start)))
+                  (funcall #'init)
                   (loop :until (= *daft-frame-counter* 0) :do
+                     (incf *frame-id* 1)
                      (decf *daft-frame-counter* 1)
                      (livesupport:continuable
                        (step-host))

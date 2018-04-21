@@ -4,8 +4,9 @@
 
 (defun die ()
   (unless (eq *self* *god*)
-    (with-slots (dead) *self*
-      (setf dead t)))
+    (with-slots (dead kind) *self*
+      (setf dead t)
+      (setf (dirty-p kind) t)))
   nil)
 
 (defun is-dead (actor)

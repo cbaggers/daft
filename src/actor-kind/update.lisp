@@ -60,6 +60,8 @@
                    per-actor-c-len
                    dirty-p)
           actor-kind
+        (when dirty-p
+          (clear-fbo (collision-fbo actor-kind)))
         (when (> per-actor-c-len 0)
           (draw-actors-to-screen scene
                                  actor-kind

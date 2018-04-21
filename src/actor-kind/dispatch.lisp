@@ -3,38 +3,41 @@
 ;;------------------------------------------------------------
 
 (defun draw-actors-common (actor-kind count height ratio
-                           &optional (offset-v2 (v! 0 0)))
-  (with-slots (per-actor-gpu-stream visual tile-count size) actor-kind
+                           sampler offset-v2)
+  (with-slots (per-actor-gpu-stream tile-count size) actor-kind
     (destructuring-bind (tx ty) tile-count
       (with-blending *blend-params*
         (with-instances count
-          (let ((origin (v2:+ (slot-value actor-kind 'origin)
-                              offset-v2)))
-            (map-g #'instanced-cube
-                   per-actor-gpu-stream
-                   :offset origin
-                   :screen-height height
-                   :screen-ratio ratio
-                   :size size
-                   :sam visual
-                   :tile-count-x tx
-                   :tile-count-y ty)))))))
+          (map-g #'instanced-cube
+                 per-actor-gpu-stream
+                 :offset offset-v2
+                 :screen-height height
+                 :screen-ratio ratio
+                 :size size
+                 :sam sampler
+                 :tile-count-x tx
+                 :tile-count-y ty))))))
 
 (defun draw-actors-to-screen (scene actor-kind count res)
-  (draw-actors-common actor-kind
-                      count
-                      *screen-height-in-game-units*
-                      (/ (x res) (y res))
-                      (v2:+ (pos (camera scene))
-                            (focus-offset))))
+  (with-slots (visual) actor-kind
+    (draw-actors-common actor-kind
+                        count
+                        *screen-height-in-game-units*
+                        (/ (x res) (y res))
+                        visual
+                        (v2:+ (pos (camera scene))
+                              (focus-offset)))))
 
 (defun draw-actors-collision-mask (scene actor-kind count res)
   (declare (ignore res))
-  (with-fbo-bound ((collision-fbo actor-kind))
-    (draw-actors-common actor-kind
-                        count
-                        (y (size scene))
-                        1f0)))
+  (with-slots (collision-fbo collision-mask) actor-kind
+    (with-fbo-bound ((collision-fbo actor-kind))
+      (draw-actors-common actor-kind
+                          count
+                          (y (size scene))
+                          1f0
+                          collision-mask
+                          (v! 0 0)))))
 
 (defun run-collision-checks (scene
                              actor-kind
@@ -49,13 +52,13 @@
          (with-slots (visual
                       per-actor-gpu-stream
                       (actor-coll-mask collision-mask)
-                      tile-count size origin)
+                      tile-count size)
              actor-kind
            (destructuring-bind (tx ty) tile-count
              (with-instances count
                (map-g #'check-collisions-with
                       per-actor-gpu-stream
-                      :offset-v2 origin
+                      :offset-v2 (v! 0 0)
                       :size size
                       :sam actor-coll-mask
                       :tile-count-x tx
