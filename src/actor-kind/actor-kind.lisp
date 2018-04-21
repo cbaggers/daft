@@ -76,4 +76,11 @@
      :dimensions (viewport-dimensions vp)
      :element-type :uint8-vec4)))
 
+(defun kill-actor-kind! (kind-name)
+  (let* ((scene *current-scene*)
+         (kind (get-actor-kind-by-name scene kind-name)))
+    (assert kind)
+    (remhash kind-name (kinds scene))
+    scene))
+
 ;;------------------------------------------------------------

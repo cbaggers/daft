@@ -59,6 +59,7 @@
    :turn-left
    :turn-right
    :turn-towards
+   :kill-actor-kind!
    :*god*
    :*current-scene*
    :*daft-frame-counter*
