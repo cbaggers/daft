@@ -16,12 +16,10 @@
 
   ;; I was lazy so we are checking window size
   ;; every frame
+  (bah-resize-hack)
   (let ((scene *current-scene*)
-        (res (surface-resolution
-              (current-surface
-               (cepl-context)))))
+        (res (viewport-resolution (current-viewport))))
     (setf (clear-color) (slot-value scene 'background-color))
-    (setf (viewport-resolution (current-viewport)) res)
     (clear)
     (update-actor-kinds scene)
     (draw-actor-kinds scene res *instanced-cube-stream*)
@@ -31,6 +29,9 @@
     (ensure-god)
     (run-end-of-frame-tasks)
     (rotate-actor-kind-state scene)
+    ;; (nineveh:draw-tex
+    ;;  (collision-sampler
+    ;;   (get-actor-kind-by-name *current-scene* 'bomber-chap::block-tile)))
     (swap)
     (decay-events)))
 

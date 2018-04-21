@@ -70,6 +70,7 @@
    :play-sound
    :play-music
    :kill
+   :add-window-resize-listener
    :*god*
    :*current-scene*
    :*daft-frame-counter*

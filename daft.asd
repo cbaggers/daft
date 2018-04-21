@@ -22,6 +22,7 @@
                (:file "src/media/images")
                (:file "src/media/audio")
                (:file "src/input/gamepads")
+               (:file "src/input/window")
                (:file "src/render")
 
                (:file "src/camera/camera")
