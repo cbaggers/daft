@@ -174,6 +174,8 @@
             (let ((*self* self))
               ,@body))))))
 
+;; why would this vv reset a private variable?
+
 (defun gen-change-state (name state-names)
   `(defmethod %change-state ((self ,name) new-state)
      (assert (member new-state ',state-names))
@@ -181,10 +183,3 @@
        (setf state new-state))))
 
 ;;------------------------------------------------------------
-
-
-
-WTF?
-
-
-Oh.. could be outside world :D

@@ -28,7 +28,7 @@
 (defun get-chunk-duration (chunk)
   ;; bah ,having problems remembering how cl-autowrap works :|
   (/ (float (plus-c:c-ref chunk sdl2-ffi:mix-chunk :alen) 0f0)
-     #.(* *bitrate* 2))) ;; stereo assumed
+     (* *bitrate* 2))) ;; stereo assumed
 
 (defgeneric load-internals (ext path)
   (:method ((ext (eql :wav)) path)

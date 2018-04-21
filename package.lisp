@@ -69,6 +69,7 @@
    :load-audio
    :play-sound
    :play-music
+   :kill
    :*god*
    :*current-scene*
    :*daft-frame-counter*

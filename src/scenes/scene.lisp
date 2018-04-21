@@ -68,13 +68,14 @@
     `(register-scene
       (make-scene ',name ',size ',camera-position ',background-color))))
 
-(defmethod ensure-initialized ((obj scene))
-  (with-slots (empty-fbo viewport) obj
-    (unless empty-fbo
-      (let ((dims (viewport-dimensions viewport)))
-        (setf empty-fbo
-              (make-fbo (list nil :dimensions dims))))))
-  obj)
+(defgeneric ensure-initialized (obj)
+  (:method ((obj scene))
+    (with-slots (empty-fbo viewport) obj
+      (unless empty-fbo
+        (let ((dims (viewport-dimensions viewport)))
+          (setf empty-fbo
+                (make-fbo (list nil :dimensions dims))))))
+    obj))
 
 (defun scene (scene-name)
   (ensure-initialized

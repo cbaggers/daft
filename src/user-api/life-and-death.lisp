@@ -3,8 +3,9 @@
 ;;------------------------------------------------------------
 
 (defun die ()
-  (with-slots (dead) *self*
-    (setf dead t))
+  (unless (eq *self* *god*)
+    (with-slots (dead) *self*
+      (setf dead t)))
   nil)
 
 (defun is-dead (actor)
@@ -12,5 +13,13 @@
 
 (defun is-alive (actor)
   (not (is-dead actor)))
+
+(defun kill (actor)
+  (unless (eq actor *god*)
+    (if (or (eq *self* *god*)
+            (null *self*))
+        (with-slots (dead) actor
+          (setf dead t))
+        (warn "Only *god* can strike an actor dead"))))
 
 ;;------------------------------------------------------------
