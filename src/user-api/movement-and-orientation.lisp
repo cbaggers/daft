@@ -89,4 +89,18 @@
     (incf (y pos) (* (y direction) distance))
     nil))
 
+(defun snap-position (position grid-size)
+  (let* ((grid-size (etypecase grid-size
+                      (number (v! grid-size grid-size))
+                      (vec2 grid-size)))
+         (offset (v2:rotate position (%rot *self*)))
+         (pos3 (%pos *self*))
+         (p2 (v! (+ (x offset) (x pos3))
+                 (+ (y offset) (y pos3)))))
+    (v! (- (* (ceiling (- (x p2) (/ (x grid-size) 2)) (x grid-size))
+              (x grid-size))
+           (x p2))
+        (- (* (ceiling (y p2) (y grid-size)) (y grid-size))
+           (y p2)))))
+
 ;;------------------------------------------------------------

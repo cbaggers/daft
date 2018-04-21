@@ -61,6 +61,7 @@
    :turn-towards
    :kill-actor-kind!
    :depth
+   :snap-position
    :focus-camera
    :*god*
    :*current-scene*
