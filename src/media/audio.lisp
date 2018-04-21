@@ -14,7 +14,7 @@
 (defun load-audio (rel-path)
   (or (gethash rel-path *audio*)
       (let* ((ext (ext rel-path))
-             (path (asdf:system-relative-pathname :daft rel-path))
+             (path (asdf:system-relative-pathname *system-hack* rel-path))
              (audio (ecase ext
                       (:wav (sdl2-mixer:load-wav path))
                       (:mp3 (sdl2-mixer:load-music path)))))
