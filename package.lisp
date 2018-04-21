@@ -52,12 +52,14 @@
    :set-angle-from-analog
    :compass-angle-from-analog
    :spawn!
+   :spawn
    :strafe
    :strafe-towards
    :touching-p
    :turn-left
    :turn-right
    :turn-towards
+   :*god*
    :*current-scene*
    :*daft-frame-counter*
    :*fps*
