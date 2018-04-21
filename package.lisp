@@ -8,6 +8,7 @@
                 :symbolicate
                 :with-gensyms)
   (:export
+   :daft
    :actor
    :actor-kind
    :camera
