@@ -61,6 +61,7 @@
    :turn-towards
    :kill-actor-kind!
    :depth
+   :focus-camera
    :*god*
    :*current-scene*
    :*daft-frame-counter*
