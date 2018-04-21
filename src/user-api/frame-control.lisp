@@ -18,12 +18,12 @@
                      0f0))))))
 
 (defun advance-frame (amount &optional range)
-  (let ((start-frame (if range
-                         (first range)
-                         0))
-        (anim-length (if range
-                         (second range)
-                         (slot-value *self* 'anim-length))))
+  (let* ((start-frame (if range
+                          (first range)
+                          0))
+         (anim-length (if (and range (second range))
+                          (- (second range) start-frame)
+                          (slot-value *self* 'anim-length))))
     (with-slots (anim-frame) *self*
       (let ((frame (- anim-frame start-frame)))
         (setf anim-frame
