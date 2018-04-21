@@ -25,6 +25,7 @@
    :change-scene
    :change-state
    :coll-with
+   :compass-angle-dir
    :compass-angle
    :compass-angle-move
    :compass-dir
@@ -33,6 +34,7 @@
    :daft
    :die
    :direction-to
+   :distance-to
    :hey
    :in-screen-p
    :in-world-p

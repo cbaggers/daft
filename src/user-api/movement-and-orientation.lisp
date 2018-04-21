@@ -44,24 +44,32 @@
     nil))
 
 (defun strafe-towards (actor distance)
-  (let* ((dir-to (direction-to actor))
-         (strafe-vec
-          (m3:*v (m3:rotation-z (+ (%rot *self*)
-                                   (radians -90f0)))
-                 (v! 0 1f0 0)))
-         (dp (v3:dot dir-to strafe-vec)))
-    (if (< dp 0)
+  (let* ((dir2-to (direction-to actor))
+         (strafe-vec (v2:from-angle
+                      (+ (%rot *self*) (radians -90f0))))
+         (ang-to (v2:angle-from dir2-to strafe-vec)))
+    (if (< ang-to 0)
         (strafe (- distance))
         (strafe distance))
     nil))
 
 (defun direction-to (actor)
-  (v3:normalize (v3:- (%pos actor) (%pos *self*))))
+  (v2:normalize (v2:- (s~ (%pos actor) :xy)
+                      (s~ (%pos *self*) :xy))))
+
+(defun distance-to (actor)
+  (let ((from (%pos actor))
+        (to (%pos *self*)))
+    (v2:length
+     (v2:make (- (x to) (x from))
+              (- (y to) (y from))))))
 
 (defun move-towards (actor distance)
-  (let ((dir (direction-to actor)))
-    (v3:incf (%pos *self*)
-             (v3:*s dir (float distance 0f0)))
+  (let* ((off (v2:*s (direction-to actor)
+                     (float distance 0f0)))
+         (pos (%pos *self*)))
+    (incf (x pos) (x off))
+    (incf (y pos) (y off))
     nil))
 
 (defun move-away-from (actor distance)
@@ -77,6 +85,7 @@
              (float distance 0f0))))
 
 (defun compass-dir-move (direction)
+  ;; this kinda feels like the api breaking
   (let ((pos (%pos *self*)))
     (incf (x pos) (x direction))
     (incf (y pos) (y direction))
@@ -88,6 +97,10 @@
     (incf (x pos) (* (x direction) distance))
     (incf (y pos) (* (y direction) distance))
     nil))
+
+(defun compass-angle-dir (compass-angle &optional (distance 1f0))
+  (v2-n:*s (v2:from-angle (radians compass-angle))
+           distance))
 
 (defun snap-position (position grid-size)
   (let* ((grid-size (etypecase grid-size
