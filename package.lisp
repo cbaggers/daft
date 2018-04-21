@@ -49,7 +49,6 @@
    :now
    :pad-1d
    :pad-button
-   :play-sound
    :radius
    :scene
    :set-angle-from-analog
@@ -66,6 +65,10 @@
    :depth
    :snap-position
    :focus-camera
+   :define-audio
+   :load-audio
+   :play-sound
+   :play-music
    :*god*
    :*current-scene*
    :*daft-frame-counter*
