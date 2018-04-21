@@ -3,9 +3,11 @@
 ;;------------------------------------------------------------
 
 (defun recieve-layout-event (event)
+  (declare (ignore event))
   (print "layout!"))
 
 (defun recieve-size-event (event)
+  (declare (ignore event))
   (print "size!"))
 
 (defvar *attached-to-window* nil)
