@@ -43,6 +43,7 @@
     :initform t
     :accessor dirty-p)
    visual
+   collision-mask
    tile-count
    anim-length
    size

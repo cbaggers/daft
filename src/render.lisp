@@ -101,14 +101,19 @@
                        (tile-count-y :int)
                        (size :vec2)
                        (world-size :vec2)
-                       (collision collision-info :ssbo))
+                       (collision collision-info :ssbo)
+                       (offset-v2 :vec2))
   (with-slots ((world-pos pos) rot anim-frame) data
     (let* ((vpos (* (pos vert) ;; -0.5 -> 0.5 cube
                     (v! size 1))) ;;-size/2 -> size/2 box
            (sa (sin rot))
            (ca (cos rot))
-           (vpos (v! (+ (* (x vpos) ca) (* (y vpos) (- sa)))
-                     (+ (* (x vpos) sa) (* (y vpos) ca))
+           (vpos (v! (+ (* (x vpos) ca)
+                        (* (y vpos) (- sa))
+                        (- (x offset-v2)))
+                     (+ (* (x vpos) sa)
+                        (* (y vpos) ca)
+                        (- (y offset-v2)))
                      (z vpos)))
            (vert-world-pos (+ (v! vpos 1)
                               (v! world-pos 0)))

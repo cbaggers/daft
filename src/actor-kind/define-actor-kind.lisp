@@ -29,7 +29,8 @@
            (class-name (kind-class-name name))
            (static-p (null state-names)))
       (assert (every #'keywordp state-names))
-      (destructuring-bind (&key visual tile-count noisy default-depth origin)
+      (destructuring-bind (&key visual tile-count noisy default-depth origin
+                                collision-mask)
           (reduce #'append keyword-vars)
         (assert (member noisy '(t nil)))
         (assert (or (null default-depth) (numberp default-depth)))
@@ -56,7 +57,8 @@
                 (gen-update-method name state-funcs state-names))
              ,@state-funcs
              ,@(gen-reinit-methods name class-name private-vars visual
-                                   tile-count state-names static-p origin)
+                                   tile-count state-names static-p origin
+                                   collision-mask)
              ,(gen-change-state name state-names)
              (push (lambda () (reinit-all-actors-of-kind ',name))
                    *tasks-for-next-frame*)))))))
@@ -111,12 +113,15 @@
 (defgeneric reinit-kind (kind))
 
 (defun gen-reinit-methods (name class-name private-vars visual
-                           tile-count state-names static-p origin)
+                           tile-count state-names static-p origin
+                           collision-mask)
   (let ((new-len (reduce #'* tile-count)))
     `((defmethod reinit-kind ((kind ,class-name))
-        (with-slots (visual size tile-count anim-length origin
-                            static-p dirty-p
-                            current next)
+        (with-slots (visual
+                     collision-mask
+                     size tile-count anim-length origin
+                     static-p dirty-p
+                     current next)
             kind
           (when (and static-p (not ,static-p))
             ;; transform from static to dynamic
@@ -125,7 +130,12 @@
           (setf origin (v! ',origin))
           (setf static-p ,static-p)
           (setf dirty-p t)
-          (setf visual ,(when visual `(load-tex ,visual)))
+          (setf visual
+                ,(when visual `(load-tex ,visual)))
+          (setf collision-mask
+                ,(if collision-mask
+                     `(load-tex ,collision-mask)
+                     'visual))
           (setf size (tile-size visual ',tile-count))
           (setf tile-count ',tile-count)
           (setf anim-length ,new-len))
@@ -171,3 +181,10 @@
        (setf state new-state))))
 
 ;;------------------------------------------------------------
+
+
+
+WTF?
+
+
+Oh.. could be outside world :D

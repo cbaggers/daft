@@ -46,13 +46,17 @@
     (do-hash-keys kind-name (kinds-to-test-collision-with actor-kind)
        (let* ((kind (get-actor-kind-by-name scene kind-name))
               (coll-mask (collision-sampler kind)))
-         (with-slots (visual tile-count size) actor-kind
+         (with-slots (visual
+                      (actor-coll-mask collision-mask)
+                      tile-count size origin)
+             actor-kind
            (destructuring-bind (tx ty) tile-count
              (with-instances count
                (map-g #'check-collisions-with
                       instanced-cube-stream
+                      :offset-v2 origin
                       :size size
-                      :sam visual
+                      :sam actor-coll-mask
                       :tile-count-x tx
                       :tile-count-y ty
                       :coll-mask coll-mask
