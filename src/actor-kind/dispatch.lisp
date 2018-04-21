@@ -4,13 +4,14 @@
 
 (defun draw-actors-common (actor-kind count height ratio
                            &optional (offset-v2 (v! 0 0)))
-  (with-slots (visual tile-count size) actor-kind
+  (with-slots (per-actor-gpu-stream visual tile-count size) actor-kind
     (destructuring-bind (tx ty) tile-count
       (with-blending *blend-params*
         (with-instances count
           (let ((origin (v2:+ (slot-value actor-kind 'origin)
                               offset-v2)))
-            (map-g #'instanced-cube *instanced-cube-stream*
+            (map-g #'instanced-cube
+                   per-actor-gpu-stream
                    :offset origin
                    :screen-height height
                    :screen-ratio ratio
@@ -38,7 +39,6 @@
 (defun run-collision-checks (scene
                              actor-kind
                              count
-                             instanced-cube-stream
                              res)
   (declare (ignore res))
   (with-fbo-bound ((empty-fbo scene)
@@ -47,13 +47,14 @@
        (let* ((kind (get-actor-kind-by-name scene kind-name))
               (coll-mask (collision-sampler kind)))
          (with-slots (visual
+                      per-actor-gpu-stream
                       (actor-coll-mask collision-mask)
                       tile-count size origin)
              actor-kind
            (destructuring-bind (tx ty) tile-count
              (with-instances count
                (map-g #'check-collisions-with
-                      instanced-cube-stream
+                      per-actor-gpu-stream
                       :offset-v2 origin
                       :size size
                       :sam actor-coll-mask

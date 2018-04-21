@@ -32,46 +32,59 @@
     (vector-push-extend actor (next-frames-actors kind))))
 
 (defun write-per-actor-data (actor-kind)
-  (let ((this-frames-actors (this-frames-actors actor-kind))
-        (c-arr (per-actor-c-data actor-kind))
-        (count 0))
-    (when (slot-value actor-kind 'visual)
-      (loop
-         :for actor :across this-frames-actors
-         :do
-         (when (not (slot-value actor 'dead))
-           (write-actor-data actor c-arr count)
-           (setf (id actor) count)
-           (incf count))))
-    (setf (per-actor-c-len actor-kind) count)
-    actor-kind))
+  (with-slots (per-actor-c-data
+               per-actor-gpu-data
+               per-actor-c-len)
+      actor-kind
+    (let ((count 0))
+      (when (slot-value actor-kind 'visual)
+        (loop
+           :for actor :across (this-frames-actors actor-kind)
+           :do
+           (when (not (slot-value actor 'dead))
+             (write-actor-data actor per-actor-c-data count)
+             (setf (id actor) count)
+             (incf count)))
+        (when (> count 0)
+          (push-g (subseq-c per-actor-c-data 0 count)
+                  (subseq-g per-actor-gpu-data 0 count))))
+      (setf per-actor-c-len count)
+      actor-kind)))
 
-(defun draw-actor-kinds (scene res instanced-cube-stream)
+(defun draw-actor-kinds (scene res)
   (with-setf* ((clear-color) (v! 0 0 0 0))
     (do-hash-vals actor-kind (kinds scene)
-      (with-slots (collision-fbo per-actor-c-data per-actor-c-len dirty-p)
+      (with-slots (collision-fbo
+                   per-actor-c-data
+                   per-actor-gpu-data
+                   per-actor-c-len
+                   dirty-p)
           actor-kind
-        (let* ((kind-collision-fbo (collision-fbo actor-kind))
-               (count per-actor-c-len))
+        (when (> per-actor-c-len 0)
+          (draw-actors-to-screen scene
+                                 actor-kind
+                                 per-actor-c-len
+                                 res)
           (when dirty-p
-            (clear-fbo kind-collision-fbo))
-          (when (> count 0)
-            (push-g (subseq-c per-actor-c-data 0 count)
-                    (subseq-g *per-actor-data* 0 count))
-            (draw-actors-to-screen scene
-                                   actor-kind
-                                   count
-                                   res)
-            (when dirty-p
-              (draw-actors-collision-mask scene
-                                          actor-kind
-                                          count
-                                          res)
-              (run-collision-checks scene
-                                    actor-kind
-                                    count
-                                    instanced-cube-stream
-                                    res))))))))
+            (clear-fbo (collision-fbo actor-kind))
+            (draw-actors-collision-mask scene
+                                        actor-kind
+                                        per-actor-c-len
+                                        res)))))
+    (do-hash-vals actor-kind (kinds scene)
+      (with-slots (collision-fbo
+                   per-actor-c-data
+                   per-actor-gpu-data
+                   per-actor-c-len
+                   static-p
+                   dirty-p)
+          actor-kind
+        (when (> per-actor-c-len 0)
+          (unless static-p
+            (run-collision-checks scene
+                                  actor-kind
+                                  per-actor-c-len
+                                  res)))))))
 
 (defun mark-actors-clean (scene)
   (do-hash-vals actor-kind (kinds scene)

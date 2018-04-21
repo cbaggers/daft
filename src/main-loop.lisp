@@ -22,7 +22,7 @@
     (setf (clear-color) (slot-value scene 'background-color))
     (clear)
     (update-actor-kinds scene)
-    (draw-actor-kinds scene res *instanced-cube-stream*)
+    (draw-actor-kinds scene res)
     (livesupport:continuable
       (livesupport:update-repl-link))
     (mark-actors-clean scene)
