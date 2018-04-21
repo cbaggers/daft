@@ -29,14 +29,16 @@
            (class-name (kind-class-name name))
            (static-p (null state-names)))
       (assert (every #'keywordp state-names))
-      (destructuring-bind (&key visual tile-count noisy default-depth)
+      (destructuring-bind (&key visual tile-count noisy default-depth origin)
           (reduce #'append keyword-vars)
         (assert (member noisy '(t nil)))
         (assert (or (null default-depth) (numberp default-depth)))
+        (assert (or (null origin) (and (listp origin) (= (length origin) 2))))
         (let ((default-depth (clamp 0f0
                                     100f0
                                     (float (or default-depth *default-depth*)
                                            0f0)))
+              (origin (or origin '(0 0)))
               (tile-count (if (numberp tile-count)
                               (list tile-count 1)
                               (or tile-count '(1 1)))))
@@ -54,7 +56,7 @@
                 (gen-update-method name state-funcs state-names))
              ,@state-funcs
              ,@(gen-reinit-methods name class-name private-vars visual
-                                   tile-count state-names static-p)
+                                   tile-count state-names static-p origin)
              ,(gen-change-state name state-names)
              (push (lambda () (reinit-all-actors-of-kind ',name))
                    *tasks-for-next-frame*)))))))
@@ -109,16 +111,18 @@
 (defgeneric reinit-kind (kind))
 
 (defun gen-reinit-methods (name class-name private-vars visual
-                           tile-count state-names static-p)
+                           tile-count state-names static-p origin)
   (let ((new-len (reduce #'* tile-count)))
     `((defmethod reinit-kind ((kind ,class-name))
-        (with-slots (visual size tile-count anim-length static-p dirty-p
+        (with-slots (visual size tile-count anim-length origin
+                            static-p dirty-p
                             current next)
             kind
           (when (and static-p (not ,static-p))
             ;; transform from static to dynamic
             (loop :for actor :across current :do
                (vector-push-extend actor next)))
+          (setf origin (v! ',origin))
           (setf static-p ,static-p)
           (setf dirty-p t)
           (setf visual ,(when visual `(load-tex ,visual)))

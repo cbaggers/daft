@@ -8,14 +8,16 @@
     (destructuring-bind (tx ty) tile-count
       (with-blending *blend-params*
         (with-instances count
-          (map-g #'instanced-cube *instanced-cube-stream*
-                 :offset offset-v2
-                 :screen-height height
-                 :screen-ratio ratio
-                 :size size
-                 :sam visual
-                 :tile-count-x tx
-                 :tile-count-y ty))))))
+          (let ((origin (v2:+ (slot-value actor-kind 'origin)
+                              offset-v2)))
+            (map-g #'instanced-cube *instanced-cube-stream*
+                   :offset origin
+                   :screen-height height
+                   :screen-ratio ratio
+                   :size size
+                   :sam visual
+                   :tile-count-x tx
+                   :tile-count-y ty)))))))
 
 (defun draw-actors-to-screen (scene actor-kind count res)
   (draw-actors-common actor-kind

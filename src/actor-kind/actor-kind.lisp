@@ -45,7 +45,8 @@
    visual
    tile-count
    anim-length
-   size))
+   size
+   origin))
 
 (defmethod print-object ((obj actor-kind) stream)
   (with-slots (name) obj
