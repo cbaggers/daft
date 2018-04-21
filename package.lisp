@@ -39,6 +39,7 @@
    :is-alive
    :is-dead
    :make-camera
+   :focus-offset
    :move-away-from
    :move-forward
    :move-towards

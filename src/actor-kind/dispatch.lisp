@@ -24,7 +24,8 @@
                       count
                       *screen-height-in-game-units*
                       (/ (x res) (y res))
-                      (pos (camera scene))))
+                      (v2:+ (pos (camera scene))
+                            (focus-offset))))
 
 (defun draw-actors-collision-mask (scene actor-kind count res)
   (declare (ignore res))
