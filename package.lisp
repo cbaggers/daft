@@ -25,6 +25,7 @@
    :change-state
    :coll-with
    :compass-angle
+   :compass-angle-move
    :compass-dir
    :compass-dir-move
    :copy-actor-state
@@ -48,6 +49,7 @@
    :radius
    :scene
    :set-angle-from-analog
+   :compass-angle-from-analog
    :spawn!
    :strafe
    :strafe-towards

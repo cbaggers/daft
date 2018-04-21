@@ -12,6 +12,14 @@
             (v2:angle-from (v! 0 1) val))))
   nil)
 
+(defun compass-angle-from-analog (analog-id
+                                  &optional
+                                    (dead-zone 0.1)
+                                    (gamepad (gamepad 0)))
+  (let ((val (gamepad-2d gamepad analog-id)))
+    (when (> (v2:length val) dead-zone)
+      (degrees (v2:angle-from (v! 0 1) val)))))
+
 (defun pad-button (button-id
                    &optional (gamepad (gamepad 0)))
   (gamepad-button gamepad button-id))

@@ -82,4 +82,11 @@
     (incf (y pos) (y direction))
     nil))
 
+(defun compass-angle-move (angle distance)
+  (let ((pos (%pos *self*))
+        (direction (v2:from-angle (radians angle))))
+    (incf (x pos) (* (x direction) distance))
+    (incf (y pos) (* (y direction) distance))
+    nil))
+
 ;;------------------------------------------------------------
