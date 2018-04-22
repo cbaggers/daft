@@ -69,6 +69,8 @@
    :load-audio
    :play-sound
    :play-music
+   :play-track
+   :stop-track
    :kill
    :add-window-resize-listener
    :*god*

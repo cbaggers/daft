@@ -22,7 +22,7 @@
   (let ((ext (string-downcase (subseq path (- (length path) 4)))))
     (cond
       ((string= ext ".wav") :wav)
-      ((string= ext ".mp3") :mp3)
+      ((string= ext ".ogg") :ogg)
       (t (error "Invalid audio file extension for daft: ~s" ext)))))
 
 (defun get-chunk-duration (chunk)
@@ -37,7 +37,7 @@
       (make-instance 'sound
                      :chunk chunk
                      :duration dur)))
-  (:method ((ext (eql :wav)) path)
+  (:method ((ext (eql :ogg)) path)
     (make-instance 'track
                    :stream (sdl2-mixer:load-music path))))
 
@@ -52,7 +52,7 @@
 
 (defun init-audio ()
   (unless *audio-initialized*
-    (sdl2-mixer:init :mp3)
+    (sdl2-mixer:init :ogg)
     (sdl2-mixer:open-audio *bitrate* :s16sys 1 1024)
     (sdl2-mixer:allocate-channels 1)
     (setf *audio-initialized* t)))
@@ -69,6 +69,7 @@
 (defvar *outputs* (make-hash-table))
 
 (defun update-audio-outputs (outputs)
+  (assert *audio-initialized*)
   (clrhash *outputs*)
   (let ((total 0))
     (loop :for (name count) :in outputs :do
@@ -85,6 +86,7 @@
   (print "reallocated audio"))
 
 (defun play-sound (output-name sound &optional (priority 1f0))
+  (assert *audio-initialized*)
   (check-type sound sound)
   (let ((now (now)))
     (labels ((get-channel (output)
@@ -110,6 +112,18 @@
         (if output
             (play-through output)
             (warn "No audio output named ~a is known" output-name))))))
+
+(defun play-track (track-or-path)
+  (assert *audio-initialized*)
+  (let ((track (etypecase track-or-path
+                 (string (load-audio track-or-path))
+                 (track track-or-path))))
+    (with-slots (audio-stream) track
+      (sdl2-mixer:play-music audio-stream))))
+
+(defun stop-track ()
+  (assert *audio-initialized*)
+  (sdl2-mixer:halt-music))
 
 (defmacro define-audio (&body outputs)
   `(push (lambda ()
