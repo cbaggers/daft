@@ -73,6 +73,7 @@
    :stop-track
    :kill
    :add-window-resize-listener
+   :load-font
    :*god*
    :*current-scene*
    :*daft-frame-counter*
