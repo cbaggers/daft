@@ -86,7 +86,8 @@
             (run-collision-checks scene
                                   actor-kind
                                   per-actor-c-len
-                                  res)))))))
+                                  res)))))
+    nil))
 
 (defun mark-actors-clean (scene)
   (do-hash-vals actor-kind (kinds scene)

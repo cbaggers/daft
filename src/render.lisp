@@ -36,7 +36,7 @@
                          1))))
     (* game-v4 (v! 2 2 1 1))))
 
-(defun-g icube-vs ((vert g-pnt)
+(defun-g base-actor-vs ((vert :vec2)
                    (data per-actor-data)
                    &uniform
                    (screen-height :float)
@@ -48,7 +48,8 @@
   (with-slots (pos rot anim-frame) data
     (multiple-value-bind (uv-scale uv-offset)
         (calc-uv-mod tile-count-x tile-count-y anim-frame)
-      (let* ((vpos (* (pos vert) (v! size 1)))
+      (let* ((vert3 (v! (* vert 0.5) 1))
+             (vpos (* vert3 (v! size 1)))
              (sa (sin rot))
              (ca (cos rot))
              (vpos (v! (+ (* (x vpos) ca)
@@ -67,34 +68,35 @@
                                          screen-height
                                          screen-ratio)))
         (values gv4
-                (tex vert)
+                (+ (* vert 0.5) 0.5)
                 uv-scale
                 uv-offset)))))
 
-(defun-g icube-fs ((uv :vec2)
+(defun-g base-actor-fs ((uv :vec2)
                    (uv-scale :vec2)
                    (uv-offset :vec2)
                    &uniform
                    (sam :sampler-2d))
-  (let ((col (texture sam (+ (* uv uv-scale) uv-offset)))
-        (nasty-discard-threshold 0.01))
+  (let* ((uv (v! (x uv) (- 1 (y uv))))
+         (col (texture sam (+ (* uv uv-scale) uv-offset)))
+         (nasty-discard-threshold 0.01))
     (when (< (w col) nasty-discard-threshold)
       (discard))
     col))
 
-(defpipeline-g instanced-cube ()
-  :vertex (icube-vs g-pnt per-actor-data)
-  :fragment (icube-fs :vec2 :vec2 :vec2))
+(defpipeline-g draw-actor-pline ()
+  :vertex (base-actor-vs :vec2 per-actor-data)
+  :fragment (base-actor-fs :vec2 :vec2 :vec2))
 
 ;;------------------------------------------------------------
 
 (defpipeline-g write-collision-map ()
-  :vertex (icube-vs g-pnt per-actor-data)
-  :fragment (icube-fs :vec2 :vec2 :vec2))
+  :vertex (base-actor-vs :vec2 per-actor-data)
+  :fragment (base-actor-fs :vec2 :vec2 :vec2))
 
 ;;------------------------------------------------------------
 
-(defun-g coll-mask-vs ((vert g-pnt)
+(defun-g coll-mask-vs ((vert :vec2)
                        (data per-actor-data)
                        &uniform
                        (tile-count-x :int)
@@ -104,8 +106,8 @@
                        (collision collision-info :ssbo)
                        (offset-v2 :vec2))
   (with-slots ((world-pos pos) rot anim-frame) data
-    (let* ((vpos (* (pos vert) ;; -0.5 -> 0.5 cube
-                    (v! size 1))) ;;-size/2 -> size/2 box
+    (let* ((vert3 (v! (* vert 0.5) 0)) ;; quad is -1 to 1
+           (vpos (* vert3 (v! size 1)))
            (sa (sin rot))
            (ca (cos rot))
            (vpos (v! (+ (* (x vpos) ca)
@@ -126,7 +128,7 @@
       (multiple-value-bind (uv-scale uv-offset)
           (calc-uv-mod tile-count-x tile-count-y anim-frame)
         (values (v! (s~ clip-pos :xyz) 1f0)
-                (tex vert)
+                (+ (* vert 0.5) 0.5)
                 uv-scale
                 uv-offset
                 coll-uv
@@ -141,7 +143,8 @@
                        (sam :sampler-2d)
                        (coll-mask :sampler-2d)
                        (collision collision-info :ssbo))
-  (let* ((our-color (texture sam (+ (* uv uv-scale) uv-offset)))
+  (let* ((uv (v! (x uv) (- 1 (y uv))))
+         (our-color (texture sam (+ (* uv uv-scale) uv-offset)))
          (mask-col (texture coll-mask coll-uv))
          (threshold (vec4 0.01 0.01 0.01 0))
          (collision-col (* mask-col (w our-color)))
@@ -151,7 +154,7 @@
     (vec4 collision-val)))
 
 (defpipeline-g check-collisions-with ()
-  :vertex (coll-mask-vs g-pnt per-actor-data)
+  :vertex (coll-mask-vs :vec2 per-actor-data)
   :fragment (coll-mask-fs :vec2 :vec2 :vec2 :vec2 :int))
 
 ;;------------------------------------------------------------

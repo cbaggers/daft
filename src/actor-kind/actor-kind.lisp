@@ -60,26 +60,27 @@
     (format stream "#<ACTOR-KIND :NAME ~a>" name)))
 
 (defun make-actor-kind (scene name)
-  (destructuring-bind (vert-arr index-arr)
-      (nineveh.mesh.data.primitives:cube-gpu-arrays)
-    (let* ((tex (gen-collision-texture scene))
-           (c-arr (make-c-array nil :element-type 'per-actor-data
+  (let* ((tex (gen-collision-texture scene))
+         (c-arr (make-c-array nil :element-type 'per-actor-data
+                              :dimensions +max-actor-count+))
+         (g-arr (make-gpu-array nil :element-type 'per-actor-data
                                 :dimensions +max-actor-count+))
-           (g-arr (make-gpu-array nil :element-type 'per-actor-data
-                                  :dimensions +max-actor-count+))
-           (strem (make-buffer-stream (list vert-arr
-                                            (cons g-arr 1))
-                                      :index-array index-arr)))
-      (reinit-kind
-       (make-instance
-        (kind-class-name name)
-        :current (make-array 0 :adjustable t :fill-pointer 0)
-        :next (make-array 0 :adjustable t :fill-pointer 0)
-        :collision-fbo (make-fbo (list 0 tex))
-        :collision-sampler (sample tex)
-        :per-actor-c-data c-arr
-        :per-actor-gpu-data g-arr
-        :per-actor-gpu-stream strem)))))
+         (strem (make-buffer-stream
+                 (list
+                  (make-gpu-array *quad-data*
+                                  :element-type :vec2
+                                  :dimensions 6)
+                  (cons g-arr 1)))))
+    (reinit-kind
+     (make-instance
+      (kind-class-name name)
+      :current (make-array 0 :adjustable t :fill-pointer 0)
+      :next (make-array 0 :adjustable t :fill-pointer 0)
+      :collision-fbo (make-fbo (list 0 tex))
+      :collision-sampler (sample tex)
+      :per-actor-c-data c-arr
+      :per-actor-gpu-data g-arr
+      :per-actor-gpu-stream strem))))
 
 (defun get-actor-kind-by-name (scene type)
   (with-slots (kinds) scene

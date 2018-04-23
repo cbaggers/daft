@@ -8,7 +8,7 @@
     (destructuring-bind (tx ty) tile-count
       (with-blending *blend-params*
         (with-instances count
-          (map-g #'instanced-cube
+          (map-g #'draw-actor-pline
                  per-actor-gpu-stream
                  :offset offset-v2
                  :screen-height height
@@ -83,6 +83,7 @@
              (let ((cols (collision-info-ids (aref-c tmp 0))))
                (loop :for i :below count :do
                   (setf (aref results i)
-                        (> (aref-c cols i) 0))))))))))
+                        (> (aref-c cols i) 0)))))
+           nil)))))
 
 ;;------------------------------------------------------------
