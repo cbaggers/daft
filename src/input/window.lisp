@@ -29,6 +29,7 @@
 (defun bah-resize-hack ()
   (let ((res (surface-resolution (current-surface))))
     (when (not (v2:= res *bah-last-res*))
+      (setf *bah-last-res* res)
       (reinit-oit-fbos)
       (setf (viewport-resolution (current-viewport)) res)
       (map nil #'funcall *resize-listeners*))))
