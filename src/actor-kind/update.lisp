@@ -52,6 +52,44 @@
       actor-kind)))
 
 (defun draw-actor-kinds (scene res)
+  ;; seperate from collision loop to avoid unbinding/rebinding fbo
+  (with-fbo-bound (*opaque-actor-fbo*)
+    (clear-fbo *opaque-actor-fbo*)
+    (do-hash-vals actor-kind (kinds scene)
+      (with-slots (collision-fbo
+                   per-actor-c-data
+                   per-actor-gpu-data
+                   per-actor-c-len
+                   dirty-p)
+          actor-kind
+        (when (> per-actor-c-len 0)
+          (draw-opaque-parts-of-actors scene
+                                       actor-kind
+                                       per-actor-c-len
+                                       res)))))
+
+  (with-setf (depth-test-function) nil
+    (do-hash-vals actor-kind (kinds scene)
+      (with-slots (per-actor-c-len) actor-kind
+        (when (> per-actor-c-len 0)
+          ;;
+          (clear-oi-accum-fbo
+           *transparent-actor-fbo*)
+          ;;
+          (accumulate-transparent-parts-of-actors
+           *transparent-actor-fbo*
+           scene
+           actor-kind
+           per-actor-c-len
+           res)))))
+
+  (with-setf (depth-test-function) nil
+    (composite-opaque-and-transparent-parts-of-actors
+     *opaque-actor-sampler*
+     *transparent-color-sampler*
+     *transparent-revealage-sampler*))
+
+
   (with-setf* ((clear-color) (v! 0 0 0 0))
     (do-hash-vals actor-kind (kinds scene)
       (with-slots (collision-fbo
@@ -60,13 +98,9 @@
                    per-actor-c-len
                    dirty-p)
           actor-kind
-        (when dirty-p
-          (clear-fbo (collision-fbo actor-kind)))
+        (when dirty-p)
+        (clear-fbo (collision-fbo actor-kind))
         (when (> per-actor-c-len 0)
-          (draw-actors-to-screen scene
-                                 actor-kind
-                                 per-actor-c-len
-                                 res)
           (when dirty-p
             (clear-fbo (collision-fbo actor-kind))
             (draw-actors-collision-mask scene
@@ -86,8 +120,8 @@
             (run-collision-checks scene
                                   actor-kind
                                   per-actor-c-len
-                                  res)))))
-    nil))
+                                  res))))))
+  nil)
 
 (defun mark-actors-clean (scene)
   (do-hash-vals actor-kind (kinds scene)

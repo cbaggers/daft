@@ -2,42 +2,72 @@
 
 ;;------------------------------------------------------------
 
-(defun draw-actors-common (actor-kind count height ratio
-                           sampler offset-v2)
-  (with-slots (per-actor-gpu-stream tile-count size) actor-kind
+(defun draw-opaque-parts-of-actors (scene actor-kind count res)
+  (with-slots (visual per-actor-gpu-stream tile-count size) actor-kind
     (destructuring-bind (tx ty) tile-count
-      (with-blending *blend-params*
+      (with-instances count
+        (map-g #'draw-actors-opaque
+               per-actor-gpu-stream
+               :offset (v2:+ (pos (camera scene))
+                             (focus-offset))
+               :screen-height *screen-height-in-game-units*
+               :screen-ratio (/ (x res) (y res))
+               :size size
+               :sam visual
+               :tile-count-x tx
+               :tile-count-y ty)))))
+
+(defun clear-oi-accum-fbo (accum-fbo)
+  (with-fbo-bound (accum-fbo :with-blending nil)
+    (clear-fbo accum-fbo) ;; could just clear depth
+    (map-g #'clear-oit-pline (get-quad-stream-v2))))
+
+(defun accumulate-transparent-parts-of-actors (accum-fbo scene actor-kind
+                                               count res)
+  (with-fbo-bound (accum-fbo)
+    (with-slots (visual per-actor-gpu-stream tile-count size) actor-kind
+      (destructuring-bind (tx ty) tile-count
         (with-instances count
-          (map-g #'draw-actor-pline
+          (map-g #'accum-actors-transparent
                  per-actor-gpu-stream
-                 :offset offset-v2
-                 :screen-height height
-                 :screen-ratio ratio
+                 :offset (v2:+ (pos (camera scene))
+                               (focus-offset))
+                 :screen-height *screen-height-in-game-units*
+                 :screen-ratio (/ (x res) (y res))
                  :size size
-                 :sam sampler
+                 :sam visual
                  :tile-count-x tx
                  :tile-count-y ty))))))
 
-(defun draw-actors-to-screen (scene actor-kind count res)
-  (with-slots (visual) actor-kind
-    (draw-actors-common actor-kind
-                        count
-                        *screen-height-in-game-units*
-                        (/ (x res) (y res))
-                        visual
-                        (v2:+ (pos (camera scene))
-                              (focus-offset)))))
+(defun composite-opaque-and-transparent-parts-of-actors (opaque-sampler
+                                                         trans-color-sampler
+                                                         revealage-sampler)
+  (map-g #'composite-actors (get-quad-stream-v2)
+         :solid-sam opaque-sampler
+         :accum-sam trans-color-sampler
+         :revealage-sam revealage-sampler))
 
 (defun draw-actors-collision-mask (scene actor-kind count res)
   (declare (ignore res))
-  (with-slots (collision-fbo collision-mask) actor-kind
+  (with-slots (collision-fbo
+               collision-mask
+               per-actor-gpu-stream
+               tile-count
+               size)
+      actor-kind
     (with-fbo-bound ((collision-fbo actor-kind))
-      (draw-actors-common actor-kind
-                          count
-                          (y (size scene))
-                          1f0
-                          collision-mask
-                          (v! 0 0)))))
+      (destructuring-bind (tx ty) tile-count
+        (with-blending *blend-params*
+          (with-instances count
+            (map-g #'draw-actor-pline
+                   per-actor-gpu-stream
+                   :offset (v! 0 0)
+                   :screen-height (y (size scene))
+                   :screen-ratio 1f0
+                   :size size
+                   :sam collision-mask
+                   :tile-count-x tx
+                   :tile-count-y ty)))))))
 
 (defun run-collision-checks (scene
                              actor-kind

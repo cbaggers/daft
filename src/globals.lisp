@@ -14,6 +14,11 @@
 (defvar *current-scene* nil)
 (defvar *audio-initialized* nil)
 (defvar *system-hack* :daft)
+(defvar *opaque-actor-fbo* nil)
+(defvar *opaque-actor-sampler* nil)
+(defvar *transparent-actor-fbo* nil)
+(defvar *transparent-color-sampler* nil)
+(defvar *transparent-revealage-sampler* nil)
 
 (defvar *quad-data*
   (list (v! -1.0   1.0)

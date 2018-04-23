@@ -12,6 +12,51 @@
 
 ;;------------------------------------------------------------
 
+(defun reinit-oit-fbos ()
+  ;;
+  ;;
+  (when *opaque-actor-fbo*
+    (free (attachment-tex *opaque-actor-fbo* 0))
+    (free (attachment-tex *opaque-actor-fbo* :d))
+    (free *opaque-actor-fbo*))
+  (setf *opaque-actor-fbo*
+        (make-fbo (list 0 :element-type :vec4)
+                  :d))
+  (setf *opaque-actor-sampler*
+        (sample (attachment-tex *opaque-actor-fbo* 0)))
+  ;;
+  ;;
+  (when *transparent-actor-fbo*
+    (free (attachment-tex *transparent-actor-fbo* 0))
+    (free (attachment-tex *transparent-actor-fbo* 1))
+    (free *transparent-actor-fbo*))
+  (setf *transparent-actor-fbo*
+        (make-fbo (list 0 :element-type :vec4)
+                  (list 1 :element-type :vec4)))
+  (setf (attachment-blending *transparent-actor-fbo* 0)
+        (make-blending-params
+         :source-rgb :one
+         :source-alpha :one
+         :destination-rgb :one
+         :destination-alpha :one))
+  (setf (attachment-blending *transparent-actor-fbo* 1)
+        (make-blending-params
+         :source-rgb :zero
+         :source-alpha :zero
+         :destination-rgb :one-minus-src-color
+         :destination-alpha :one-minus-src-color))
+  (setf *transparent-color-sampler*
+        (sample (attachment-tex *transparent-actor-fbo* 0)))
+  (setf *transparent-revealage-sampler*
+        (sample (attachment-tex *transparent-actor-fbo* 1))))
+
+(defun init-render ()
+  (reinit-oit-fbos)
+  (unless *ssbo*
+    (setf *ssbo* (make-ssbo nil 'collision-info))))
+
+;;------------------------------------------------------------
+
 ;; {TODO} make into gpu func
 ;;
 (defun-g calc-uv-mod ((tile-count-x :int)
@@ -87,6 +132,89 @@
 (defpipeline-g draw-actor-pline ()
   :vertex (base-actor-vs :vec2 per-actor-data)
   :fragment (base-actor-fs :vec2 :vec2 :vec2))
+
+;;------------------------------------------------------------
+
+(defconstant +hacky-transparent-threshold+
+  (- 1f0 0.0001))
+
+(defun-g base-actor-fs ((uv :vec2)
+                   (uv-scale :vec2)
+                   (uv-offset :vec2)
+                   &uniform
+                   (sam :sampler-2d))
+  (let* ((uv (v! (x uv) (- 1 (y uv))))
+         (col (texture sam (+ (* uv uv-scale) uv-offset))))
+    (when (< (w col) +hacky-transparent-threshold+)
+      ;; drop all the transparent parts
+      (discard))
+    col))
+
+(defpipeline-g draw-actors-opaque ()
+  :vertex (base-actor-vs :vec2 per-actor-data)
+  :fragment (base-actor-fs :vec2 :vec2 :vec2))
+
+;;------------------------------------------------------------
+
+(defun-g depth-estimator-0 ((linear-depth :float) (alpha :float))
+  (clamp (/ 0.03 (+ 0.00001 (expt linear-depth 4f0))) 0.01 3000.0))
+
+(defun-g transparent-actor-accumulate-fs ((uv :vec2)
+                                          (uv-scale :vec2)
+                                          (uv-offset :vec2)
+                                          &uniform
+                                          (sam :sampler-2d))
+  (let* ((uv (v! (x uv) (- 1 (y uv))))
+         (color (texture sam (+ (* uv uv-scale) uv-offset)))
+         (ci (s~ color :xyz))
+         (ai (w color)))
+    (unless (< ai +hacky-transparent-threshold+)
+      ;; drop all the solid parts
+      (discard))
+    (let* ((view-depth (abs (/ 1f0 (w gl-frag-coord))))
+           (depth-scale 0.1) ;; between 0.1 & 1
+           (linear-depth (* view-depth depth-scale))
+           (weight (depth-estimator-0 linear-depth ai)))
+      (values
+       (* (v! (* ci ai) ai) weight)
+       (vec4 ai)))))
+
+(defpipeline-g accum-actors-transparent ()
+  :vertex (base-actor-vs :vec2 per-actor-data)
+  :fragment (transparent-actor-accumulate-fs :vec2 :vec2 :vec2))
+
+;;------------------------------------------------------------
+
+(defpipeline-g composite-actors ()
+  :vertex
+  (lambda-g ((vert :vec2))
+    (values (v! vert 0 1)
+            (+ (* vert 0.5) 0.5)))
+  :fragment
+  (lambda-g ((uv :vec2)
+             &uniform
+             (solid-sam :sampler-2d)
+             (accum-sam :sampler-2d)
+             (revealage-sam :sampler-2d))
+    (let* ((solid (s~ (texture solid-sam uv) :xyz))
+           (accum (texture accum-sam uv))
+           (reveal (x (texture revealage-sam uv)))
+
+           (avg-color (/ (s~ accum :xyz) (max (w accum) 0.00001))))
+      (v! (+ (* avg-color (- 1f0 reveal))
+             (* solid reveal))
+          1))))
+
+;;------------------------------------------------------------
+
+(defpipeline-g clear-oit-pline ()
+  :vertex
+  (lambda-g ((vert :vec2))
+    (values (v! vert 0 1)
+            (+ (* vert 0.5) 0.5)))
+  :fragment
+  (lambda-g ((uv :vec2))
+    (values (vec4 0) (vec4 1f0))))
 
 ;;------------------------------------------------------------
 
