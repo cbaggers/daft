@@ -68,7 +68,7 @@
                                        per-actor-c-len
                                        res)))))
 
-  (with-setf (depth-test-function) nil
+  (with-setf (depth-mask) nil
     (do-hash-vals actor-kind (kinds scene)
       (with-slots (per-actor-c-len) actor-kind
         (when (> per-actor-c-len 0)

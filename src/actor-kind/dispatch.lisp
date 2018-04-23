@@ -59,7 +59,7 @@
       (destructuring-bind (tx ty) tile-count
         (with-blending *blend-params*
           (with-instances count
-            (map-g #'draw-actor-pline
+            (map-g #'draw-actor-collision-mask
                    per-actor-gpu-stream
                    :offset (v! 0 0)
                    :screen-height (y (size scene))

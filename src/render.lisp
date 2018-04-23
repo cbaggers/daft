@@ -32,7 +32,8 @@
     (free *transparent-actor-fbo*))
   (setf *transparent-actor-fbo*
         (make-fbo (list 0 :element-type :vec4)
-                  (list 1 :element-type :vec4)))
+                  (list 1 :element-type :vec4)
+                  (list :d (attachment-tex *opaque-actor-fbo* :d))))
   (setf (attachment-blending *transparent-actor-fbo* 0)
         (make-blending-params
          :source-rgb :one
@@ -125,30 +126,15 @@
   (let* ((uv (v! (x uv) (- 1 (y uv))))
          (col (texture sam (+ (* uv uv-scale) uv-offset)))
          (nasty-discard-threshold 0.01))
-    (when (< (w col) nasty-discard-threshold)
+    (when (< (w col) 1)
       (discard))
     col))
 
-(defpipeline-g draw-actor-pline ()
+(defpipeline-g draw-actor-collision-mask ()
   :vertex (base-actor-vs :vec2 per-actor-data)
   :fragment (base-actor-fs :vec2 :vec2 :vec2))
 
 ;;------------------------------------------------------------
-
-(defconstant +hacky-transparent-threshold+
-  (- 1f0 0.0001))
-
-(defun-g base-actor-fs ((uv :vec2)
-                   (uv-scale :vec2)
-                   (uv-offset :vec2)
-                   &uniform
-                   (sam :sampler-2d))
-  (let* ((uv (v! (x uv) (- 1 (y uv))))
-         (col (texture sam (+ (* uv uv-scale) uv-offset))))
-    (when (< (w col) +hacky-transparent-threshold+)
-      ;; drop all the transparent parts
-      (discard))
-    col))
 
 (defpipeline-g draw-actors-opaque ()
   :vertex (base-actor-vs :vec2 per-actor-data)
@@ -168,7 +154,7 @@
          (color (texture sam (+ (* uv uv-scale) uv-offset)))
          (ci (s~ color :xyz))
          (ai (w color)))
-    (unless (< ai +hacky-transparent-threshold+)
+    (unless (< ai 1f0)
       ;; drop all the solid parts
       (discard))
     (let* ((view-depth (abs (/ 1f0 (w gl-frag-coord))))

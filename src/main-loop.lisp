@@ -51,6 +51,9 @@
            (unwind-protect
                 (progn
                   (when (cepl.lifecycle:uninitialized-p) (repl))
+                  ;; kick host, hopefully we have a size now :p
+                  (step-host)
+                  (step-host)
                   (funcall #'init)
                   (loop :until (= *daft-frame-counter* 0) :do
                      (incf *frame-id* 1)
