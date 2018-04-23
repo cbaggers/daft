@@ -2,13 +2,13 @@
 
 ;;------------------------------------------------------------
 
-(defun recieve-layout-event (event)
-  (declare (ignore event))
+(defun recieve-layout-event (&rest args)
+  (declare (ignore args))
   (let ((res (surface-resolution (current-surface))))
     (on-resize res)))
 
-(defun recieve-size-event (event)
-  (declare (ignore event))
+(defun recieve-size-event (&rest args)
+  (declare (ignore args))
   (let ((res (surface-resolution (current-surface))))
     (on-resize res)))
 
