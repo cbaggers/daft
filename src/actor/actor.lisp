@@ -7,6 +7,7 @@
    (debug-name :initform (get-name) :reader debug-name)
    (dead :initform nil)
    (anim-frame :initform 0f0)
+   (scale :initform 1f0)
    current-public-state
    next-public-state
    state

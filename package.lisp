@@ -76,6 +76,7 @@
    :add-timer
    :remove-timer
    :time-p
+   :scale
    :*god*
    :*current-scene*
    :*daft-frame-counter*
