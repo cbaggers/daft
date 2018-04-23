@@ -33,6 +33,7 @@
     ;;  (collision-sampler
     ;;   (get-actor-kind-by-name *current-scene* 'bomber-chap::block-tile)))
     (swap)
+    (clear-this-frames-timer-data)
     (decay-events)))
 
 ;;------------------------------------------------------------

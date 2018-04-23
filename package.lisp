@@ -73,6 +73,9 @@
    :stop-track
    :kill
    :add-window-resize-listener
+   :add-timer
+   :remove-timer
+   :time-p
    :*god*
    :*current-scene*
    :*daft-frame-counter*
