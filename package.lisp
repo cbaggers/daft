@@ -47,6 +47,7 @@
    :move-forward
    :move-towards
    :next-frame
+   :last-frame
    :now
    :pad-1d
    :pad-button
@@ -78,6 +79,10 @@
    :remove-timer
    :time-p
    :scale
+   :set-position-relative-to
+   :point-at
+   :set-frame
+   :get-frame
    :*god*
    :*current-scene*
    :*daft-frame-counter*
