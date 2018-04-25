@@ -9,7 +9,7 @@
                          0))
         (anim-length (if range
                          (second range)
-                         (slot-value *self* 'anim-length))))
+                         (slot-value (kind *self*) 'anim-length))))
     (with-slots (anim-frame) *self*
       (let ((frame (- anim-frame start-frame)))
         (setf anim-frame
