@@ -119,6 +119,10 @@
   (v2-n:*s (v2:from-angle (radians compass-angle))
            distance))
 
+(defun point-at (dir)
+  (incf (%rot *self*)
+        (v2:angle-from (v! 0 1) dir)))
+
 (defun+ snap-position (position grid-size)
   (declare (profile t))
   (let* ((grid-size (etypecase grid-size
