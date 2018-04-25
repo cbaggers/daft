@@ -138,4 +138,10 @@
         (- (* (ceiling (y p2) (y grid-size)) (y grid-size))
            (y p2)))))
 
+(defun set-position-relative-to (actor offset2)
+  (let ((apos (%pos actor)))
+    (setf (%pos *self*)
+          (v2:+ apos offset2))
+    nil))
+
 ;;------------------------------------------------------------
