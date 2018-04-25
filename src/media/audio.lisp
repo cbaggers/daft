@@ -18,14 +18,16 @@
 (defvar *audio* (make-hash-table :test #'equal))
 (defvar *bitrate* 22050)
 
-(defun ext (path)
+(defun+ ext (path)
+  (declare (profile t))
   (let ((ext (string-downcase (subseq path (- (length path) 4)))))
     (cond
       ((string= ext ".wav") :wav)
       ((string= ext ".ogg") :ogg)
       (t (error "Invalid audio file extension for daft: ~s" ext)))))
 
-(defun get-chunk-duration (chunk)
+(defun+ get-chunk-duration (chunk)
+  (declare (profile t))
   ;; bah ,having problems remembering how cl-autowrap works :|
   (/ (float (plus-c:c-ref chunk sdl2-ffi:mix-chunk :alen) 0f0)
      (* *bitrate* 2))) ;; stereo assumed
@@ -41,7 +43,8 @@
     (make-instance 'track
                    :stream (sdl2-mixer:load-music path))))
 
-(defun load-audio (rel-path)
+(defun+ load-audio (rel-path)
+  (declare (profile t))
   (or (gethash rel-path *audio*)
       (let* ((ext (ext rel-path))
              (path (asdf:system-relative-pathname *system-hack* rel-path))
@@ -50,7 +53,8 @@
 
 ;;------------------------------------------------------------
 
-(defun init-audio ()
+(defun+ init-audio ()
+  (declare (profile t))
   (unless *audio-initialized*
     (sdl2-mixer:init :ogg)
     (sdl2-mixer:open-audio *bitrate* :s16sys 1 1024)
@@ -68,7 +72,8 @@
 
 (defvar *outputs* (make-hash-table))
 
-(defun update-audio-outputs (outputs)
+(defun+ update-audio-outputs (outputs)
+  (declare (profile t))
   (assert *audio-initialized*)
   (clrhash *outputs*)
   (let ((total 0))
@@ -85,7 +90,8 @@
     (sdl2-mixer:allocate-channels total))
   (print "reallocated audio"))
 
-(defun play-sound (output-name sound &optional (priority 1f0))
+(defun+ play-sound (output-name sound &optional (priority 1f0))
+  (declare (profile t))
   (assert *audio-initialized*)
   (check-type sound sound)
   (let ((now (now)))
@@ -113,7 +119,8 @@
             (play-through output)
             (warn "No audio output named ~a is known" output-name))))))
 
-(defun play-track (track-or-path)
+(defun+ play-track (track-or-path)
+  (declare (profile t))
   (assert *audio-initialized*)
   (let ((track (etypecase track-or-path
                  (string (load-audio track-or-path))
@@ -121,7 +128,8 @@
     (with-slots (audio-stream) track
       (sdl2-mixer:play-music audio-stream))))
 
-(defun stop-track ()
+(defun+ stop-track ()
+  (declare (profile t))
   (assert *audio-initialized*)
   (sdl2-mixer:halt-music))
 

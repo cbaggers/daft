@@ -13,7 +13,8 @@
 
 ;;------------------------------------------------------------
 
-(defun reinit-oit-fbos ()
+(defun+ reinit-oit-fbos ()
+  (declare (profile t))
   ;;
   ;;
   (when *opaque-actor-fbo*
@@ -52,7 +53,8 @@
   (setf *transparent-revealage-sampler*
         (sample (attachment-tex *transparent-actor-fbo* 1))))
 
-(defun init-render ()
+(defun+ init-render ()
+  (declare (profile t))
   (reinit-oit-fbos)
   (unless *ssbo*
     (setf *ssbo* (make-ssbo nil 'collision-info))))

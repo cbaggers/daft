@@ -27,7 +27,8 @@
     :initform (make-hash-table)
     :accessor kinds)))
 
-(defun make-scene (name size camera-position background-color)
+(defun+ make-scene (name size camera-position background-color)
+  (declare (profile t))
   (let ((camera-position (or camera-position '(0 0))))
     (make-instance
      'scene
@@ -42,7 +43,8 @@
 
 (defvar *scenes* (make-hash-table))
 
-(defun register-scene (scene)
+(defun+ register-scene (scene)
+  (declare (profile t))
   (check-type scene scene)
   (let ((existing (gethash (name scene) *scenes*)))
     (if existing
@@ -77,11 +79,13 @@
                 (make-fbo (list nil :dimensions dims))))))
     obj))
 
-(defun scene (scene-name)
+(defun+ scene (scene-name)
+  (declare (profile t))
   (ensure-initialized
    (gethash scene-name *scenes*)))
 
-(defun change-scene (scene-name)
+(defun+ change-scene (scene-name)
+  (declare (profile t))
   (let ((scene (gethash scene-name *scenes*)))
     (assert scene)
     (setf *current-scene* scene)))

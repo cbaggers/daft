@@ -2,7 +2,8 @@
 
 ;;------------------------------------------------------------
 
-(defun init ()
+(defun+ init ()
+  (declare (profile t))
   (init-audio)
   (init-pads)
   (init-render)

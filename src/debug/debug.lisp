@@ -2,7 +2,7 @@
 
 ;;------------------------------------------------------------
 
-(defun hey (name)
+(defun+ hey (name)
   (with-slots (kinds) *current-scene*
     (loop :for arrays :being :the :hash-values :of kinds
        :for x := (find name (this-frames-actors arrays)
@@ -14,7 +14,7 @@
   `(let ((*self* ,actor))
      ,@body))
 
-(defun spawn! (actor-kind-name pos
+(defun+ spawn! (actor-kind-name pos
                &rest args &key &allow-other-keys)
   (as *god*
     (apply #'spawn actor-kind-name pos args)))

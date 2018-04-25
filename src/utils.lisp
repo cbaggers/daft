@@ -2,7 +2,8 @@
 
 ;;------------------------------------------------------------
 
-(defun ensure-array-size (arr count)
+(defun+ ensure-array-size (arr count)
+  (declare (profile t))
   (let ((len (length arr)))
     (cond
       ((> len count)
@@ -32,7 +33,7 @@
 
 ;;------------------------------------------------------------
 
-(defun now ()
+(defun+ now ()
   (/ (get-internal-real-time) 1000f0))
 
 ;;------------------------------------------------------------

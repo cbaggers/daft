@@ -2,7 +2,8 @@
 
 ;;------------------------------------------------------------
 
-(defun update-actor-kinds (scene)
+(defun+ update-actor-kinds (scene)
+  (declare (profile t))
   (with-slots (kinds) scene
     ;;
     (do-hash-vals actor-kind kinds
@@ -24,14 +25,17 @@
       (when (dirty-p actor-kind)
         (write-per-actor-data actor-kind)))))
 
-(defun reset-surviving-actor-array (actor-kind)
+(defun+ reset-surviving-actor-array (actor-kind)
+  (declare (profile t))
   (setf (fill-pointer (next-frames-actors actor-kind)) 0))
 
-(defun enqueue-actor-for-next-frame (actor)
+(defun+ enqueue-actor-for-next-frame (actor)
+  (declare (profile t))
   (with-slots (kind) actor
     (vector-push-extend actor (next-frames-actors kind))))
 
-(defun write-per-actor-data (actor-kind)
+(defun+ write-per-actor-data (actor-kind)
+  (declare (profile t))
   (with-slots (per-actor-c-data
                per-actor-gpu-data
                per-actor-c-len)
@@ -51,7 +55,8 @@
       (setf per-actor-c-len count)
       actor-kind)))
 
-(defun draw-actor-kinds (scene res)
+(defun+ draw-actor-kinds (scene res)
+  (declare (profile t))
   ;; seperate from collision loop to avoid unbinding/rebinding fbo
   (with-fbo-bound (*opaque-actor-fbo*)
     (clear-fbo *opaque-actor-fbo*)
@@ -123,13 +128,15 @@
                                   res))))))
   nil)
 
-(defun mark-actors-clean (scene)
+(defun+ mark-actors-clean (scene)
+  (declare (profile t))
   (do-hash-vals actor-kind (kinds scene)
     (when (and (dirty-p actor-kind)
                (static-p actor-kind))
       (setf (dirty-p actor-kind) nil))))
 
-(defun rotate-actor-kind-state (scene)
+(defun+ rotate-actor-kind-state (scene)
+  (declare (profile t))
   (do-hash-vals actor-kind (kinds scene)
     (unless (static-p actor-kind)
       (loop :for actor :across (this-frames-actors actor-kind) :do
@@ -138,7 +145,8 @@
 
 ;;------------------------------------------------------------
 
-(defun ensure-god ()
+(defun+ ensure-god ()
+  (declare (profile t))
   (unless *god*
     (let ((*self* nil))
       (setf *god* (spawn 'god (v! 0 0))))))

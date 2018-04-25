@@ -2,7 +2,8 @@
 
 ;;------------------------------------------------------------
 
-(defun init-pads ()
+(defun+ init-pads ()
+  (declare (profile t))
   (unless *sdl2-pads*
     (let ((ids '(0)))
       (setf *sdl2-pads*  (make-array 10 :initial-element nil))

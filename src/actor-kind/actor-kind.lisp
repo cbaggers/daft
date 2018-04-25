@@ -59,7 +59,8 @@
   (with-slots (name) obj
     (format stream "#<ACTOR-KIND :NAME ~a>" name)))
 
-(defun make-actor-kind (scene name)
+(defun+ make-actor-kind (scene name)
+  (declare (profile t))
   (let* ((tex (gen-collision-texture scene))
          (c-arr (make-c-array nil :element-type 'per-actor-data
                               :dimensions +max-actor-count+))
@@ -82,20 +83,23 @@
       :per-actor-gpu-data g-arr
       :per-actor-gpu-stream strem))))
 
-(defun get-actor-kind-by-name (scene type)
+(defun+ get-actor-kind-by-name (scene type)
+  (declare (profile t))
   (with-slots (kinds) scene
     (or (gethash type kinds)
         (setf (gethash type kinds)
               (make-actor-kind scene type)))))
 
-(defun gen-collision-texture (scene)
+(defun+ gen-collision-texture (scene)
+  (declare (profile t))
   (let ((vp (viewport scene)))
     (make-texture
      nil
      :dimensions (viewport-dimensions vp)
      :element-type :uint8-vec4)))
 
-(defun kill-actor-kind! (kind-name)
+(defun+ kill-actor-kind! (kind-name)
+  (declare (profile t))
   (let* ((scene *current-scene*)
          (kind (get-actor-kind-by-name scene kind-name)))
     (assert kind)

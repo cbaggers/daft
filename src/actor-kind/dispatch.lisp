@@ -2,7 +2,8 @@
 
 ;;------------------------------------------------------------
 
-(defun draw-opaque-parts-of-actors (scene actor-kind count res)
+(defun+ draw-opaque-parts-of-actors (scene actor-kind count res)
+  (declare (profile t))
   (with-slots (visual per-actor-gpu-stream tile-count size) actor-kind
     (destructuring-bind (tx ty) tile-count
       (with-instances count
@@ -17,13 +18,15 @@
                :tile-count-x tx
                :tile-count-y ty)))))
 
-(defun clear-oi-accum-fbo (accum-fbo)
+(defun+ clear-oi-accum-fbo (accum-fbo)
+  (declare (profile t))
   (with-fbo-bound (accum-fbo :with-blending nil)
     (clear-fbo accum-fbo) ;; could just clear depth
     (map-g #'clear-oit-pline (get-quad-stream-v2))))
 
-(defun accumulate-transparent-parts-of-actors (accum-fbo scene actor-kind
+(defun+ accumulate-transparent-parts-of-actors (accum-fbo scene actor-kind
                                                count res)
+  (declare (profile t))
   (with-fbo-bound (accum-fbo)
     (with-slots (visual per-actor-gpu-stream tile-count size) actor-kind
       (destructuring-bind (tx ty) tile-count
@@ -39,15 +42,17 @@
                  :tile-count-x tx
                  :tile-count-y ty))))))
 
-(defun composite-opaque-and-transparent-parts-of-actors (opaque-sampler
+(defun+ composite-opaque-and-transparent-parts-of-actors (opaque-sampler
                                                          trans-color-sampler
                                                          revealage-sampler)
+  (declare (profile t))
   (map-g #'composite-actors (get-quad-stream-v2)
          :solid-sam opaque-sampler
          :accum-sam trans-color-sampler
          :revealage-sam revealage-sampler))
 
-(defun draw-actors-collision-mask (scene actor-kind count res)
+(defun+ draw-actors-collision-mask (scene actor-kind count res)
+  (declare (profile t))
   (declare (ignore res))
   (with-slots (collision-fbo
                collision-mask
@@ -69,10 +74,11 @@
                    :tile-count-x tx
                    :tile-count-y ty)))))))
 
-(defun run-collision-checks (scene
+(defun+ run-collision-checks (scene
                              actor-kind
                              count
                              res)
+  (declare (profile t))
   (declare (ignore res))
   (with-fbo-bound ((empty-fbo scene)
                    :attachment-for-size t)

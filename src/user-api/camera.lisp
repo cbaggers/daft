@@ -2,7 +2,8 @@
 
 ;;------------------------------------------------------------
 
-(defun focus-camera (&optional (offset (v! 0 0)))
+(defun+ focus-camera (&optional (offset (v! 0 0)))
+  (declare (profile t))
   (let* ((actor *self*)
          (offset (v2:rotate (etypecase offset
                               (number (v! 0 offset))

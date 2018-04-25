@@ -6,7 +6,8 @@
   ((pos :initform (v! 0 0 0) :initarg :pos)
    (rot :initform 0f0 :initarg :rot)))
 
-(defun make-public-state (&optional start-pos creator depth)
+(defun+ make-public-state (&optional start-pos creator depth)
+  (declare (profile t))
   (let ((state (make-instance 'public-state)))
     (when (and start-pos creator)
       (let* ((creator-pos (%pos creator))
@@ -24,7 +25,8 @@
 
 ;;------------------------------------------------------------
 
-(defun copy-actor-state (actor)
+(defun+ copy-actor-state (actor)
+  (declare (profile t))
   (let ((src (slot-value actor 'current-public-state))
         (next (slot-value actor 'next-public-state)))
     (setf (slot-value next 'pos) (slot-value src 'pos))
@@ -32,14 +34,16 @@
 
 ;;------------------------------------------------------------
 
-(defun %pos (actor)
+(defun+ %pos (actor)
+  (declare (profile t))
   (slot-value
    (if (eq *self* actor)
        (slot-value actor 'next-public-state)
        (slot-value actor 'current-public-state))
    'pos))
 
-(defun (setf %pos) (value actor)
+(defun+ (setf %pos) (value actor)
+  (declare (profile t))
   (setf (slot-value
          (if (eq *self* actor)
              (slot-value actor 'next-public-state)
@@ -47,14 +51,16 @@
          'pos)
         value))
 
-(defun %rot (actor)
+(defun+ %rot (actor)
+  (declare (profile t))
   (slot-value
    (if (eq *self* actor)
        (slot-value actor 'next-public-state)
        (slot-value actor 'current-public-state))
    'rot))
 
-(defun (setf %rot) (value actor)
+(defun+ (setf %rot) (value actor)
+  (declare (profile t))
   (setf (slot-value
          (if (eq *self* actor)
              (slot-value actor 'next-public-state)

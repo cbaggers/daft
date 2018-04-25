@@ -7,7 +7,7 @@
 (defvar *wip* 0)
 (defvar *fps* 0)
 
-(defun step-engine ()
+(defun+ step-engine ()
   ;; Update FPS
   (incf *wip*)
   (when (funcall *stepper*)
@@ -42,7 +42,7 @@
 (defvar *daft-frame-counter* 0)
 (defvar *frame-id* 0)
 
-(defun daft (action &optional (frames -1))
+(defun+ daft (action &optional (frames -1))
   (ecase action
     (:start
      (if (= *daft-frame-counter* 0)
@@ -72,7 +72,7 @@
 
 ;;------------------------------------------------------------
 
-(defun run-end-of-frame-tasks ()
+(defun+ run-end-of-frame-tasks ()
   (loop :for task :in *tasks-for-next-frame* :do
      (restart-case (funcall task)
        (continue () :report "Daft: Skip Task")))

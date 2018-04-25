@@ -2,7 +2,8 @@
 
 ;;------------------------------------------------------------
 
-(defun next-frame (&optional range)
+(defun+ next-frame (&optional range)
+  (declare (profile t))
   (let ((start-frame (if range
                          (first range)
                          0))
@@ -17,7 +18,8 @@
                         start-frame)
                      0f0))))))
 
-(defun advance-frame (amount &optional range)
+(defun+ advance-frame (amount &optional range)
+  (declare (profile t))
   (let* ((start-frame (if range
                           (first range)
                           0))

@@ -2,14 +2,16 @@
 
 ;;------------------------------------------------------------
 
-(defun rotate-actor-state (actor)
+(defun+ rotate-actor-state (actor)
+  (declare (profile t))
   (with-slots (current-public-state next-public-state)
       actor
     (rotatef current-public-state next-public-state)))
 
 ;;------------------------------------------------------------
 
-(defun write-actor-data (actor c-array index)
+(defun+ write-actor-data (actor c-array index)
+  (declare (profile t))
   (let* ((c-actor (aref-c c-array index))
          (kind (kind actor))
          (origin (slot-value kind 'origin)))

@@ -12,15 +12,15 @@
 
 ;;------------------------------------------------------------
 
-(defun seperate-var-types (vars)
+(defun+ seperate-var-types (vars)
   (values (remove-if-not #'keywordp vars :key #'first)
           (remove-if #'keywordp vars :key #'first)))
 
-(defun kind-class-name (kind-name)
+(defun+ kind-class-name (kind-name)
   (intern (format nil "~a-KIND" kind-name)
           (symbol-package kind-name)))
 
-(defun %define-actor (name values states)
+(defun+ %define-actor (name values states)
   (multiple-value-bind (keyword-vars private-vars)
       (seperate-var-types values)
     (let* ((state-funcs (gen-state-funcs name states private-vars))
@@ -63,7 +63,7 @@
              (push (lambda () (reinit-all-actors-of-kind ',name))
                    *tasks-for-next-frame*)))))))
 
-(defun gen-actor-class (name private-vars)
+(defun+ gen-actor-class (name private-vars)
   `(defclass ,name (actor)
      ((name :initform ',name)
       ,@(loop
@@ -71,11 +71,11 @@
            :for kwd := (intern (symbol-name var-name) :keyword)
            :collect `(,var-name :initarg ,kwd)))))
 
-(defun gen-spawn (name private-vars noisy default-state static-p
+(defun+ gen-spawn (name private-vars noisy default-state static-p
                   default-depth)
   (let* ((key-args (loop :for (name val) :in private-vars :collect
                       `(,name nil ,(gensym)))))
-    `(defmethod spawn ((kwd-kind-name (eql ',name)) pos
+    `(defmethod+ spawn ((kwd-kind-name (eql ',name)) pos
                        &key ,@key-args)
        (declare (ignore kwd-kind-name))
        (let* ((scene *current-scene*)
@@ -112,11 +112,11 @@
 
 (defgeneric reinit-kind (kind))
 
-(defun gen-reinit-methods (name class-name private-vars visual
+(defun+ gen-reinit-methods (name class-name private-vars visual
                            tile-count state-names static-p origin
                            collision-mask)
   (let ((new-len (reduce #'* tile-count)))
-    `((defmethod reinit-kind ((kind ,class-name))
+    `((defmethod+ reinit-kind ((kind ,class-name))
         (with-slots (visual
                      collision-mask
                      size tile-count anim-length origin
@@ -140,14 +140,14 @@
           (setf tile-count ',tile-count)
           (setf anim-length ,new-len))
         kind)
-      (defmethod reinit-private-state ((actor ,name))
+      (defmethod+ reinit-private-state ((actor ,name))
         (let ((*self* actor))
           ,@(loop
                :for (slot-name new-val dont-change) :in private-vars
                :unless dont-change
                :collect `(setf (slot-value actor ',slot-name)
                                ,new-val))))
-      (defmethod reinit-system-state ((actor ,name))
+      (defmethod+ reinit-system-state ((actor ,name))
         (let ((*self* actor))
           (with-slots (state tile-count anim-frame) actor
             (setf anim-frame (if (< anim-frame ,new-len)
@@ -156,28 +156,28 @@
             (when (not (find state ',state-names))
               (setf state ,(first state-names)))))))))
 
-(defun gen-update-method (name state-funcs state-names)
+(defun+ gen-update-method (name state-funcs state-names)
   (let ((func-names (mapcar #'second state-funcs)))
-    `(defmethod update ((self ,name))
+    `(defmethod+ update ((self ,name))
        (with-slots (state) self
          (case state
            ,@(loop :for state :in state-names
                 :for func :in func-names :collect
                 `(,state (,func self))))))))
 
-(defun gen-state-funcs (name states private-vars)
+(defun+ gen-state-funcs (name states private-vars)
   (loop :for (state-name . body) :in states :collect
      (let ((state-func-name (symbolicate name :- state-name))
            (private-var-names (mapcar #'first private-vars)))
-       `(defun ,state-func-name (self)
+       `(defun+ ,state-func-name (self)
           (with-slots ,private-var-names self
             (let ((*self* self))
               ,@body))))))
 
 ;; why would this vv reset a private variable?
 
-(defun gen-change-state (name state-names)
-  `(defmethod %change-state ((self ,name) new-state)
+(defun+ gen-change-state (name state-names)
+  `(defmethod+ %change-state ((self ,name) new-state)
      (assert (member new-state ',state-names))
      (with-slots (state) self
        (setf state new-state))))

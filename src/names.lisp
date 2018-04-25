@@ -2003,7 +2003,8 @@
     terra
     celina))
 
-(defun get-name ()
+(defun+ get-name ()
+  (declare (profile t))
   (or (pop *names*)
       (if *freed-names*
           (progn

@@ -17,7 +17,8 @@
   (format stream "#<~a ~a>" (type-of actor)
           (slot-value actor 'debug-name)))
 
-(defun radius (actor)
+(defun+ radius (actor)
+  (declare (profile t))
   (with-slots (visual) (kind actor)
     (/ (x (resolution (sampler-texture visual))) 2f0)))
 
@@ -29,7 +30,8 @@
 
 ;;------------------------------------------------------------
 
-(defun free-actor (actor)
+(defun+ free-actor (actor)
+  (declare (profile t))
   (when (symbol-package (debug-name actor))
     (push (debug-name actor) *freed-names*)))
 
@@ -41,12 +43,14 @@
 
 (defgeneric %change-state (actor new-state))
 
-(defun change-state (new-state)
+(defun+ change-state (new-state)
+  (declare (profile t))
   (%change-state *self* new-state))
 
 ;;------------------------------------------------------------
 
-(defun reinit-all-actors-of-kind (type-name)
+(defun+ reinit-all-actors-of-kind (type-name)
+  (declare (profile t))
   (let* ((scene *current-scene*)
          (kind (get-actor-kind-by-name scene type-name)))
     (reinit-kind kind)
