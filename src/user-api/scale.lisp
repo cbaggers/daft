@@ -9,6 +9,6 @@
 (defun+ (setf scale) (value)
   (declare (profile t))
   (setf (slot-value *self* 'scale)
-        (clamp 0.1f0 1f0 (float value 0f0))))
+        (clamp 0.1f0 100f0 (float value 0f0))))
 
 ;;------------------------------------------------------------
