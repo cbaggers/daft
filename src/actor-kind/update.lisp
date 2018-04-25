@@ -57,6 +57,11 @@
 
 (defun+ draw-actor-kinds (scene res)
   (declare (profile t))
+
+  (with-setf (depth-test-function) nil
+    (clear-oi-accum-fbo
+     *transparent-actor-fbo*))
+
   ;; seperate from collision loop to avoid unbinding/rebinding fbo
   (with-fbo-bound (*opaque-actor-fbo*)
     (clear-fbo *opaque-actor-fbo*)
@@ -74,19 +79,15 @@
                                        res)))))
 
   (with-setf (depth-mask) nil
-    (do-hash-vals actor-kind (kinds scene)
-      (with-slots (per-actor-c-len) actor-kind
-        (when (> per-actor-c-len 0)
-          ;;
-          (clear-oi-accum-fbo
-           *transparent-actor-fbo*)
-          ;;
-          (accumulate-transparent-parts-of-actors
-           *transparent-actor-fbo*
-           scene
-           actor-kind
-           per-actor-c-len
-           res)))))
+    (with-fbo-bound (*transparent-actor-fbo*)
+      (do-hash-vals actor-kind (kinds scene)
+        (with-slots (per-actor-c-len) actor-kind
+          (when (> per-actor-c-len 0)
+            (accumulate-transparent-parts-of-actors
+             scene
+             actor-kind
+             per-actor-c-len
+             res))))))
 
   (with-setf (depth-test-function) nil
     (composite-opaque-and-transparent-parts-of-actors

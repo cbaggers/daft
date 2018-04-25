@@ -94,10 +94,11 @@
                    (tile-count-y :int)
                    (size :vec2)
                    (offset :vec2))
-  (with-slots (pos rot anim-frame) data
+  (with-slots (pos rot anim-frame scale) data
     (multiple-value-bind (uv-scale uv-offset)
         (calc-uv-mod tile-count-x tile-count-y anim-frame)
-      (let* ((vert3 (v! (* vert 0.5) 1))
+      (let* ((vert3 (v! (* vert 0.5 scale)
+                        1))
              (vpos (* vert3 (v! size 1)))
              (sa (sin rot))
              (ca (cos rot))
@@ -121,6 +122,8 @@
                 uv-scale
                 uv-offset)))))
 
+(defconstant +hack-threshold+ 0.001)
+
 (defun-g base-actor-fs ((uv :vec2)
                    (uv-scale :vec2)
                    (uv-offset :vec2)
@@ -129,9 +132,9 @@
   (let* ((uv (v! (x uv) (- 1 (y uv))))
          (col (texture sam (+ (* uv uv-scale) uv-offset)))
          (nasty-discard-threshold 0.01))
-    (when (< (w col) 1)
+    (when (< (w col) (- 1 +hack-threshold+))
       (discard))
-    col))
+    (v! (s~ col :xyz) 1)))
 
 (defpipeline-g draw-actor-collision-mask ()
   :vertex (base-actor-vs :vec2 per-actor-data)
@@ -157,7 +160,7 @@
          (color (texture sam (+ (* uv uv-scale) uv-offset)))
          (ci (s~ color :xyz))
          (ai (w color)))
-    (unless (< ai 1f0)
+    (unless (< ai (- 1 +hack-threshold+))
       ;; drop all the solid parts
       (discard))
     (let* ((view-depth (abs (/ 1f0 (w gl-frag-coord))))

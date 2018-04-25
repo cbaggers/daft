@@ -24,23 +24,22 @@
     (clear-fbo accum-fbo) ;; could just clear depth
     (map-g #'clear-oit-pline (get-quad-stream-v2))))
 
-(defun+ accumulate-transparent-parts-of-actors (accum-fbo scene actor-kind
-                                               count res)
+(defun+ accumulate-transparent-parts-of-actors (scene actor-kind
+                                                      count res)
   (declare (profile t))
-  (with-fbo-bound (accum-fbo)
-    (with-slots (visual per-actor-gpu-stream tile-count size) actor-kind
-      (destructuring-bind (tx ty) tile-count
-        (with-instances count
-          (map-g #'accum-actors-transparent
-                 per-actor-gpu-stream
-                 :offset (v2:+ (pos (camera scene))
-                               (focus-offset))
-                 :screen-height *screen-height-in-game-units*
-                 :screen-ratio (/ (x res) (y res))
-                 :size size
-                 :sam visual
-                 :tile-count-x tx
-                 :tile-count-y ty))))))
+  (with-slots (visual per-actor-gpu-stream tile-count size) actor-kind
+    (destructuring-bind (tx ty) tile-count
+      (with-instances count
+        (map-g #'accum-actors-transparent
+               per-actor-gpu-stream
+               :offset (v2:+ (pos (camera scene))
+                             (focus-offset))
+               :screen-height *screen-height-in-game-units*
+               :screen-ratio (/ (x res) (y res))
+               :size size
+               :sam visual
+               :tile-count-x tx
+               :tile-count-y ty)))))
 
 (defun+ composite-opaque-and-transparent-parts-of-actors (opaque-sampler
                                                          trans-color-sampler
