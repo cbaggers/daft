@@ -53,25 +53,23 @@
 (defun+ draw-actors-collision-mask (scene actor-kind count res)
   (declare (profile t))
   (declare (ignore res))
-  (with-slots (collision-fbo
-               collision-mask
+  (with-slots (collision-mask
                per-actor-gpu-stream
                tile-count
                size)
       actor-kind
-    (with-fbo-bound ((collision-fbo actor-kind))
-      (destructuring-bind (tx ty) tile-count
-        (with-blending *blend-params*
-          (with-instances count
-            (map-g #'draw-actor-collision-mask
-                   per-actor-gpu-stream
-                   :offset (v! 0 0)
-                   :screen-height (y (size scene))
-                   :screen-ratio 1f0
-                   :size size
-                   :sam collision-mask
-                   :tile-count-x tx
-                   :tile-count-y ty)))))))
+    (destructuring-bind (tx ty) tile-count
+      (with-blending *blend-params*
+        (with-instances count
+          (map-g #'draw-actor-collision-mask
+                 per-actor-gpu-stream
+                 :offset (v! 0 0)
+                 :screen-height (y (size scene))
+                 :screen-ratio 1f0
+                 :size size
+                 :sam collision-mask
+                 :tile-count-x tx
+                 :tile-count-y ty))))))
 
 (defun+ run-collision-checks (scene
                              actor-kind

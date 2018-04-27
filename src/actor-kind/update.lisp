@@ -105,13 +105,13 @@
                    dirty-p)
           actor-kind
         (when dirty-p
-          (clear-fbo (collision-fbo actor-kind)))
-        (when (> per-actor-c-len 0)
-          (when dirty-p
-            (draw-actors-collision-mask scene
-                                        actor-kind
-                                        per-actor-c-len
-                                        res)))))
+          (clear-fbo (collision-fbo actor-kind))
+          (when (> per-actor-c-len 0)
+            (with-fbo-bound ((collision-fbo actor-kind))
+              (draw-actors-collision-mask scene
+                                          actor-kind
+                                          per-actor-c-len
+                                          res))))))
     (do-hash-vals actor-kind (kinds scene)
       (with-slots (collision-fbo
                    per-actor-c-data
