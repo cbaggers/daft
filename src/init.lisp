@@ -9,6 +9,7 @@
   (init-render)
   (init-window-listener)
   (do-hash-vals scene *scenes*
-    (ensure-initialized scene)))
+    (ensure-initialized scene))
+  (on-resize (surface-resolution (current-surface))))
 
 ;;------------------------------------------------------------
