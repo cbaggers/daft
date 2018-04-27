@@ -104,11 +104,10 @@
                    per-actor-c-len
                    dirty-p)
           actor-kind
-        (when dirty-p)
-        (clear-fbo (collision-fbo actor-kind))
+        (when dirty-p
+          (clear-fbo (collision-fbo actor-kind)))
         (when (> per-actor-c-len 0)
           (when dirty-p
-            (clear-fbo (collision-fbo actor-kind))
             (draw-actors-collision-mask scene
                                         actor-kind
                                         per-actor-c-len
