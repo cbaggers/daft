@@ -40,14 +40,18 @@
                per-actor-gpu-data
                per-actor-c-len)
       actor-kind
-    (let ((count 0))
+    (let* ((count 0)
+           (datum (aref-c per-actor-c-data 0)))
       (when (slot-value actor-kind 'visual)
         (loop
            :for actor :across (this-frames-actors actor-kind)
            :do
            (when (not (slot-value actor 'dead))
-             (write-actor-data actor per-actor-c-data count)
+             (write-actor-data actor datum)
              (setf (id actor) count)
+             (cffi:incf-pointer
+              (per-actor-data-pointer datum)
+              #.(cffi:foreign-type-size 'per-actor-data))
              (incf count)))
         (when (> count 0)
           (push-g (subseq-c per-actor-c-data 0 count)

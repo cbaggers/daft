@@ -10,10 +10,9 @@
 
 ;;------------------------------------------------------------
 
-(defun+ write-actor-data (actor c-array index)
+(defun+ write-actor-data (actor c-actor)
   (declare (profile t))
-  (let* ((c-actor (aref-c c-array index))
-         (kind (kind actor))
+  (let* ((kind (kind actor))
          (origin (slot-value kind 'origin)))
     (with-slots (current-public-state anim-frame scale) actor
       (with-slots (pos rot) current-public-state
