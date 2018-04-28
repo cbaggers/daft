@@ -34,6 +34,7 @@
    :copy-actor-state
    :daft
    :die
+   :offset-to
    :direction-to
    :distance-to
    :hey

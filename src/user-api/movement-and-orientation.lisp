@@ -66,6 +66,11 @@
   (v2:normalize (v2:- (s~ (%pos actor) :xy)
                       (s~ (%pos *self*) :xy))))
 
+(defun+ offset-to (actor)
+  (declare (profile t))
+  (v2:normalize (v2:- (s~ (%pos actor) :xy)
+                      (s~ (%pos *self*) :xy))))
+
 (defun+ distance-to (actor)
   (declare (profile t))
   (let ((from (%pos actor))
