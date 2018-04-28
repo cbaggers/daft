@@ -97,17 +97,28 @@
   (let ((now (now)))
     (labels ((get-channel (output)
                (with-slots (channel-offset finish-times priorities) output
-                 (loop
-                    :for time :across finish-times
-                    :for pri :across priorities
-                    :for i :from 0
-                    :when (or (< pri priority) (< time now))
-                    :return
-                    (progn
-                      (setf (aref priorities i) priority)
-                      (setf (aref finish-times i)
-                            (+ (now) (duration sound)))
-                      (+ channel-offset i)))))
+                 (or (loop
+                        :for time :across finish-times
+                        :for pri :across priorities
+                        :for i :from 0
+                        :when (< time now)
+                        :return
+                        (progn
+                          (setf (aref priorities i) priority)
+                          (setf (aref finish-times i)
+                                (+ (now) (duration sound)))
+                          (+ channel-offset i)))
+                     (loop
+                        :for time :across finish-times
+                        :for pri :across priorities
+                        :for i :from 0
+                        :when (< pri priority)
+                        :return
+                        (progn
+                          (setf (aref priorities i) priority)
+                          (setf (aref finish-times i)
+                                (+ (now) (duration sound)))
+                          (+ channel-offset i))))))
              (play-through (output)
                (let ((channel (get-channel output)))
                  (when channel
