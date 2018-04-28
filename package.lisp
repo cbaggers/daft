@@ -83,6 +83,7 @@
    :point-at
    :set-frame
    :get-frame
+   :per-second
    :*god*
    :*current-scene*
    :*daft-frame-counter*
