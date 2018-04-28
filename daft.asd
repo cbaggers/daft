@@ -14,7 +14,8 @@
                :with-setf
                :sdl2-game-controller-db
                :alexandria
-               :sdl2-mixer)
+               :sdl2-mixer
+               :shipshape)
   :components ((:file "package")
                (:file "src/utils")
                (:file "src/globals")
