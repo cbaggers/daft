@@ -23,6 +23,7 @@
                (:file "src/media/images")
                (:file "src/media/audio")
                (:file "src/input/gamepads")
+               (:file "src/gpu-types")
                (:file "src/render")
                (:file "src/input/window")
 
@@ -30,6 +31,9 @@
                (:file "src/scenes/scene")
                (:file "src/scenes/default-scene")
                (:file "src/actor-kind/actor-kind")
+
+               (:file "src/collision/gpu")
+               (:file "src/collision/collision")
 
                (:file "src/actor/public-state")
                (:file "src/actor/actor")
@@ -51,6 +55,6 @@
                (:file "src/user-api/frame-control")
                (:file "src/user-api/depth")
                (:file "src/user-api/scale")
+               (:file "src/user-api/collision")
 
-               (:file "src/collision/collision")
                (:file "src/debug/debug")))
