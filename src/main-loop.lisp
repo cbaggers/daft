@@ -7,34 +7,52 @@
 (defvar *wip* 0)
 (defvar *fps* 0)
 
+(defconstant +step-size+ (* 1000f0 (/ 1f0 60f0)))
+(defvar *frame-stepper* nil)
+(defvar *last-frame* (get-internal-real-time))
+(defvar *per-frame-mult*)
+
 (defun+ step-engine ()
   ;; Update FPS
   (incf *wip*)
   (when (funcall *stepper*)
     (setf *fps* *wip*
           *wip* 0))
-
   ;; I was lazy so we are checking window size
   ;; every frame
   (bah-resize-hack)
   (let ((scene *current-scene*)
         (res (viewport-resolution (current-viewport))))
+    ;;
+    ;; drawing
     (setf (clear-color) (slot-value scene 'background-color))
     (clear)
-    (update-actor-kinds scene)
     (draw-actor-kinds scene res)
-    (livesupport:continuable
-      (livesupport:update-repl-link))
-    (mark-actors-clean scene)
-    (ensure-god)
-    (run-end-of-frame-tasks)
-    (rotate-actor-kind-state scene)
-    ;; (nineveh:draw-tex
-    ;;  (collision-sampler
-    ;;   (get-actor-kind-by-name *current-scene* 'bomber-chap::block-tile)))
-    (swap)
-    (clear-this-frames-timer-data)
-    (decay-events)))
+    ;;
+    ;; updates & collision
+    (let ((now (get-internal-real-time))
+          (*per-frame-mult*
+           (clamp 0.001 1.0 (* (float (- (get-internal-real-time) *last-frame*) 0f0)
+                               0.001))))
+      (setf *last-frame* now)
+      (incf *frame-id* 1)
+      (decf *daft-frame-counter* 1)
+      (step-host)
+      (tiny-time-manager:update)
+      (update-actor-kinds scene)
+      (run-all-kind-collision-checks scene res)
+      (livesupport:continuable
+        (livesupport:update-repl-link))
+      (mark-actors-clean scene)
+      (ensure-god)
+      (run-end-of-frame-tasks)
+      (rotate-actor-kind-state scene)
+      ;; (nineveh:draw-tex
+      ;;  (collision-sampler
+      ;;   (get-actor-kind-by-name *current-scene* 'bomber-chap::block-tile)))
+      (swap)
+      (clear-this-frames-timer-data)
+      (decay-events))))
 
 ;;------------------------------------------------------------
 
@@ -56,15 +74,10 @@
                   (step-host)
                   (step-host)
                   (funcall #'init)
-                  (loop :until (= *daft-frame-counter* 0) :do
-                     (incf *frame-id* 1)
-                     (decf *daft-frame-counter* 1)
-                     (livesupport:continuable
-                       (step-host))
-                     (livesupport:continuable
-                       (tiny-time-manager:update))
-                     (livesupport:continuable
-                       (step-engine))))
+                  (setf *frame-stepper* (make-stepper +step-size+))
+                  (loop
+                     :until (= *daft-frame-counter* 0)
+                     :do (livesupport:continuable (step-engine))))
              (setf *daft-frame-counter* 0)
              (format t "~%~%- stopping ~a -~%" 'daft)))
          (format t "~%~%- ~a is already running -~%" 'daft)))

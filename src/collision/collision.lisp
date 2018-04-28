@@ -125,4 +125,36 @@
                        (* count #.(cffi:foreign-type-size :int)))))
            nil)))))
 
+(defun run-all-kind-collision-checks (scene res)
+  (with-setf* ((clear-color) (v! 0 0 0 0))
+    (do-hash-vals actor-kind (kinds scene)
+      (with-slots (collision-fbo
+                   per-actor-c-data
+                   per-actor-gpu-data
+                   per-actor-c-len
+                   dirty-p)
+          actor-kind
+        (when dirty-p
+          (with-fbo-bound (collision-fbo)
+            (clear-fbo collision-fbo)
+            (when (> per-actor-c-len 0)
+              (draw-actors-collision-mask scene
+                                          actor-kind
+                                          per-actor-c-len
+                                          res))))))
+    (do-hash-vals actor-kind (kinds scene)
+      (with-slots (collision-fbo
+                   per-actor-c-data
+                   per-actor-gpu-data
+                   per-actor-c-len
+                   static-p
+                   dirty-p)
+          actor-kind
+        (when (> per-actor-c-len 0)
+          (unless static-p
+            (run-collision-checks scene
+                                  actor-kind
+                                  per-actor-c-len
+                                  res)))))))
+
 ;;------------------------------------------------------------

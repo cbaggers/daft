@@ -145,3 +145,6 @@
     nil))
 
 ;;------------------------------------------------------------
+
+(defn-inline per-frame ((val real)) single-float
+  (* (float val 0f0) *per-frame-mult*))
