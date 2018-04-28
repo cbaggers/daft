@@ -16,9 +16,10 @@
 (defun+ coll-with (actor-kind)
   (declare (profile t))
   (with-slots (kind id) *self*
-    (setf (gethash actor-kind (kinds-to-test-collision-with kind)) t)
-    (let ((results (gethash actor-kind (collision-results kind))))
-      (when (and id results)
-        (aref results id)))))
+    (let ((target-kind (%get-actor-kind-by-name *current-scene* actor-kind)))
+      (setf (gethash target-kind (kinds-to-test-collision-with kind)) t)
+      (let ((results (gethash target-kind (collision-results kind))))
+        (when (and id results)
+          (> (aref-c results id) 0))))))
 
 ;;------------------------------------------------------------

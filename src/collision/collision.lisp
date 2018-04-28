@@ -63,6 +63,34 @@
                  :tile-count-x tx
                  :tile-count-y ty))))))
 
+(defun coll-result-array-size (count)
+  (* (ceiling count 5000) 5000))
+
+(defun make-col-result-array (count)
+  (make-c-array
+   nil
+   :dimensions (coll-result-array-size count)
+   :element-type :int))
+
+(defun+ ensure-coll-array-size (arr count)
+  (declare (profile t))
+  (when (< (c-array-total-size arr) count)
+    (make-col-result-array count)))
+
+(defun+ get-coll-result-array (actor-kind target-kind count)
+  (let ((results
+         (gethash target-kind (collision-results actor-kind))))
+    (if results
+        (let ((new (ensure-coll-array-size results count)))
+          (if new
+              (progn
+                (free-c-array results)
+                (setf (gethash target-kind (collision-results actor-kind))
+                      new))
+              results))
+        (let ((arr (make-col-result-array count)))
+          (setf (gethash target-kind (collision-results actor-kind)) arr)))))
+
 (defun+ run-collision-checks (scene
                              actor-kind
                              count
@@ -71,9 +99,8 @@
   (declare (ignore res))
   (with-fbo-bound ((empty-fbo scene)
                    :attachment-for-size t)
-    (do-hash-keys kind-name (kinds-to-test-collision-with actor-kind)
-       (let* ((kind (get-actor-kind-by-name scene kind-name))
-              (coll-mask (collision-sampler kind)))
+    (do-hash-keys target-kind (kinds-to-test-collision-with actor-kind)
+       (let* ((coll-mask (collision-sampler target-kind)))
          (with-slots (visual
                       per-actor-gpu-stream
                       (actor-coll-mask collision-mask)
@@ -91,24 +118,11 @@
                       :coll-mask coll-mask
                       :world-size (size scene)
                       :collision *ssbo*))))
-         (let ((results (gethash kind-name (collision-results
-                                            actor-kind))))
-           (if results
-               (ensure-array-size results count)
-               (let ((arr (make-array count
-                                      :adjustable t
-                                      :fill-pointer t
-                                      :initial-element nil
-                                      :element-type 'boolean)))
-                 (setf (gethash kind-name
-                                (collision-results actor-kind))
-                       arr)
-                 (setf results arr)))
+         (let ((results (get-coll-result-array actor-kind target-kind count)))
            (with-gpu-array-as-c-array (tmp (ssbo-data *ssbo*))
              (let ((cols (collision-info-ids (aref-c tmp 0))))
-               (loop :for i :below count :do
-                  (setf (aref results i)
-                        (> (aref-c cols i) 0)))))
+               (memcpy (c-array-pointer results) (c-array-pointer cols)
+                       (* count #.(cffi:foreign-type-size :int)))))
            nil)))))
 
 ;;------------------------------------------------------------

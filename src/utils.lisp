@@ -37,3 +37,8 @@
   (/ (get-internal-real-time) 1000f0))
 
 ;;------------------------------------------------------------
+
+(cffi:defcfun (memcpy "memcpy") :pointer
+  (destination-pointer :pointer)
+  (source-pointer :pointer)
+  (byte-length :long))

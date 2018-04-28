@@ -83,12 +83,18 @@
       :per-actor-gpu-data g-arr
       :per-actor-gpu-stream strem))))
 
-(defun+ get-actor-kind-by-name (scene type)
+(defun+ %get-actor-kind-by-name (scene type)
   (declare (profile t))
   (with-slots (kinds) scene
-    (or (gethash type kinds)
+    (gethash type kinds)))
+
+(defun+ get-actor-kind-by-name (scene type)
+  (declare (profile t))
+  (or (%get-actor-kind-by-name scene type)
+      (with-slots (kinds) scene
         (setf (gethash type kinds)
               (make-actor-kind scene type)))))
+
 
 (defun+ gen-collision-texture (scene)
   (declare (profile t))

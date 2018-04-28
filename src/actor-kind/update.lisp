@@ -105,9 +105,9 @@
                    dirty-p)
           actor-kind
         (when dirty-p
-          (clear-fbo (collision-fbo actor-kind))
-          (when (> per-actor-c-len 0)
-            (with-fbo-bound ((collision-fbo actor-kind))
+          (with-fbo-bound (collision-fbo)
+            (clear-fbo collision-fbo)
+            (when (> per-actor-c-len 0)
               (draw-actors-collision-mask scene
                                           actor-kind
                                           per-actor-c-len
