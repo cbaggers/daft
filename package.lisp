@@ -84,6 +84,7 @@
    :set-frame
    :get-frame
    :per-second
+   :position-between
    :*god*
    :*current-scene*
    :*daft-frame-counter*

@@ -146,5 +146,14 @@
 
 ;;------------------------------------------------------------
 
+(defun+ position-between (actor-a actor-b zero-to-one)
+  (let ((val (clamp 0f0 1f0 (float zero-to-one 0f0)))
+        (a (s~ (%pos actor-a) :xy))
+        (b (s~ (%pos actor-b) :xy)))
+    (setf (%pos *self*) (v2:lerp a b val))))
+
+;;------------------------------------------------------------
+
 (defn-inline per-second ((val real)) single-float
+  (declare (profile t))
   (* (float val 0f0) *per-frame-mult*))
