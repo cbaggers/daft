@@ -21,8 +21,8 @@
           (progn
             (setf (gethash target-kind (kinds-to-test-collision-with kind)) t)
             (let ((results (gethash target-kind (collision-results kind))))
-              (when (and id results)
-                (> (aref-c results id) 0))))
+              (when (and id results (< id (collision-result-count results)))
+                (> (aref-c (collision-result-array results) id) 0))))
           (progn
 	    (warn "Cant check for collision with ~s.~%Not a known kind of actor"
 		  actor-kind)

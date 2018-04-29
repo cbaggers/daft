@@ -2,6 +2,12 @@
 
 ;;------------------------------------------------------------
 
+(defstruct collision-result
+  (array nil :type (or null c-array))
+  (count 0 :type (integer 0 #.+max-actor-count+)))
+
+;;------------------------------------------------------------
+
 (defun+ %touching-kind-p (scene self target)
   (declare (profile t))
   (let ((actors (get-actor-kind-by-name scene target)))
@@ -85,15 +91,18 @@
   (let ((results
          (gethash target-kind (collision-results actor-kind))))
     (if results
-        (let ((new (ensure-coll-array-size results count)))
+        (let* ((arr (collision-result-array results))
+	       (new (ensure-coll-array-size arr count)))
           (if new
               (progn
-                (free-c-array results)
-                (setf (gethash target-kind (collision-results actor-kind))
-                      new))
+                (free-c-array arr)
+                (setf (collision-result-array results) new)
+		results)
               results))
-        (let ((arr (make-col-result-array count)))
-          (setf (gethash target-kind (collision-results actor-kind)) arr)))))
+        (setf (gethash target-kind (collision-results actor-kind))
+	      (make-collision-result
+	       :array (make-col-result-array count)
+	       :count 0)))))
 
 (defun+ run-collision-checks (scene
                               actor-kind
@@ -102,7 +111,9 @@
   (declare (profile t))
   (declare (ignore res))
   (do-hash-keys target-kind (kinds-to-test-collision-with actor-kind)
-    (let* ((coll-mask (collision-sampler target-kind)))
+    (let* ((coll-mask (collision-sampler target-kind))
+	   ;;(fence nil)
+	   )
       (with-slots (per-actor-gpu-stream
                    (actor-coll-mask collision-mask)
                    tile-count size)
@@ -118,9 +129,17 @@
                    :tile-count-y ty
                    :coll-mask coll-mask
                    :world-size (size scene)
-                   :collision *ssbo*))))
+                   :collision *ssbo*)
+	    ;;(setf fence (make-gpu-fence))
+	    )))
+      ;; (when fence
+      ;; 	(wait-on-gpu-fence fence -1)
+      ;; 	(free-gpu-fence fence))      
       (let ((results (get-coll-result-array actor-kind target-kind count)))
-        (pull-into results (ssbo-data *ssbo*) count)
+	(setf (collision-result-count results) count)
+        (pull-into (collision-result-array results)
+		   (ssbo-data *ssbo*)
+		   count)
         nil))))
 
 ;; should be in cepl in proper form
