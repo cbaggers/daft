@@ -21,6 +21,7 @@
                (:file "src/globals")
                (:file "src/names")
                (:file "src/timer")
+	       (:file "src/media/paths")
                (:file "src/media/images")
                (:file "src/media/audio")
                (:file "src/input/gamepads")

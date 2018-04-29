@@ -47,7 +47,7 @@
   (declare (profile t))
   (or (gethash rel-path *audio*)
       (let* ((ext (ext rel-path))
-             (path (asdf:system-relative-pathname *system-hack* rel-path))
+             (path (funcall *get-local-path* *system-hack* rel-path))
              (audio (load-internals ext path)))
         (setf (gethash rel-path *audio*) audio))))
 

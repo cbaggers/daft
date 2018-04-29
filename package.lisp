@@ -86,6 +86,7 @@
    :get-frame
    :per-second
    :position-between
+   :set-local-path-function
    :*god*
    :*current-scene*
    :*daft-frame-counter*
