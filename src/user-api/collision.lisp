@@ -23,7 +23,9 @@
             (let ((results (gethash target-kind (collision-results kind))))
               (when (and id results)
                 (> (aref-c results id) 0))))
-          (warn "Cant check for collision with ~s.~%Not a known kind of actor"
-                actor-kind)))))
+          (progn
+	    (warn "Cant check for collision with ~s.~%Not a known kind of actor"
+		  actor-kind)
+	    nil)))))
 
 ;;------------------------------------------------------------

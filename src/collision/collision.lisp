@@ -67,10 +67,14 @@
   (* (ceiling count 5000) 5000))
 
 (defun+ make-col-result-array (count)
-  (make-c-array
-   nil
-   :dimensions (coll-result-array-size count)
-   :element-type :int))
+  (let ((res (make-c-array
+	      nil
+	      :dimensions (coll-result-array-size count)
+	      :element-type :int)))
+    (memset (c-array-pointer res)
+	    0
+    	    (* count #.(cffi:foreign-type-size :int)))
+    res))
 
 (defun+ ensure-coll-array-size (arr count)
   (declare (profile t))

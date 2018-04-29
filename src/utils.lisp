@@ -42,3 +42,8 @@
   (destination-pointer :pointer)
   (source-pointer :pointer)
   (byte-length :long))
+
+(cffi:defcfun (memset "memset") :pointer
+  (ptr :pointer)
+  (val :int)
+  (byte-length :long))

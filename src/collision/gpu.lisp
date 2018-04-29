@@ -4,7 +4,13 @@
 
 (defun+ init-collision ()
   (unless *ssbo*
-    (setf *ssbo* (make-ssbo nil 'collision-info))))
+    (with-c-array-freed (tmp (make-c-array nil
+					   :dimensions 1
+					   :element-type 'collision-info))
+      (memset (c-array-pointer tmp)
+	      0
+	      #.(cffi:foreign-type-size 'collision-info))
+      (setf *ssbo* (make-ssbo (make-gpu-array tmp))))))
 
 ;;------------------------------------------------------------
 
