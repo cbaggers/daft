@@ -59,7 +59,7 @@
 
 ;;------------------------------------------------------------
 
-(defun+ daft (action &optional (frames -1))
+(defun+ daft (action &optional (frames -1) (fullscreen nil))
   (ecase action
     (:start
      (if (= *daft-frame-counter* 0)
@@ -68,7 +68,17 @@
            (format t "~%- starting ~a -" 'daft)
            (unwind-protect
                 (progn
-                  (when (cepl.lifecycle:uninitialized-p) (repl))
+                  (when (cepl.lifecycle:uninitialized-p)
+                    (if fullscreen
+                        (progn
+                          (initialize-cepl)
+                          (make-surface-current
+                           (cepl-context)
+                           (add-surface (cepl-context)
+                                        :fullscreen t
+                                        :width 1920
+                                        :height 1080)))
+                        (repl)))
                   ;; kick host, hopefully we have a size now :p
                   (step-host)
                   (step-host)
