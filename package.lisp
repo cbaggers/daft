@@ -87,6 +87,7 @@
    :per-second
    :position-between
    :set-local-path-function
+   :*default-gamepad-id*
    :*god*
    :*current-scene*
    :*daft-frame-counter*
