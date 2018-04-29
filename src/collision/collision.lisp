@@ -92,45 +92,52 @@
           (setf (gethash target-kind (collision-results actor-kind)) arr)))))
 
 (defun+ run-collision-checks (scene
-                             actor-kind
-                             count
-                             res)
+                              actor-kind
+                              count
+                              res)
   (declare (profile t))
   (declare (ignore res))
-  (with-fbo-bound ((empty-fbo scene)
-                   :attachment-for-size t)
-    (do-hash-keys target-kind (kinds-to-test-collision-with actor-kind)
-       (let* ((coll-mask (collision-sampler target-kind)))
-         (with-slots (visual
-                      per-actor-gpu-stream
-                      (actor-coll-mask collision-mask)
-                      tile-count size)
-             actor-kind
-           (destructuring-bind (tx ty) tile-count
-             (with-instances count
-               (map-g #'check-collisions-with
-                      per-actor-gpu-stream
-                      :offset-v2 (v! 0 0)
-                      :size size
-                      :sam actor-coll-mask
-                      :tile-count-x tx
-                      :tile-count-y ty
-                      :coll-mask coll-mask
-                      :world-size (size scene)
-                      :collision *ssbo*))))
-         (let ((results (get-coll-result-array actor-kind target-kind count)))
-           (with-gpu-array-as-c-array (tmp (ssbo-data *ssbo*))
-             (let ((cols (collision-info-ids (aref-c tmp 0))))
-               (memcpy (c-array-pointer results) (c-array-pointer cols)
-                       (* count #.(cffi:foreign-type-size :int)))))
-           nil)))))
+  (do-hash-keys target-kind (kinds-to-test-collision-with actor-kind)
+    (let* ((coll-mask (collision-sampler target-kind)))
+      (with-slots (per-actor-gpu-stream
+                   (actor-coll-mask collision-mask)
+                   tile-count size)
+          actor-kind
+        (destructuring-bind (tx ty) tile-count
+          (with-instances count
+            (map-g #'check-collisions-with
+                   per-actor-gpu-stream
+                   :offset-v2 (v! 0 0)
+                   :size size
+                   :sam actor-coll-mask
+                   :tile-count-x tx
+                   :tile-count-y ty
+                   :coll-mask coll-mask
+                   :world-size (size scene)
+                   :collision *ssbo*))))
+      (let ((results (get-coll-result-array actor-kind target-kind count)))
+        (pull-into results (ssbo-data *ssbo*) count)
+        nil))))
+
+;; should be in cepl in proper form
+(defn pull-into ((c-arr c-array)
+                 (g-arr %cepl.types:gpu-array-bb)
+                 (len unsigned-byte))
+    c-array
+  (let ((buffer (gpu-array-buffer g-arr)))
+    (setf (cepl.context:gpu-buffer-bound (cepl-context) :array-buffer)
+          buffer)
+    (%gl:get-buffer-sub-data
+     #.(cepl-utils:gl-enum :array-buffer)
+     (%cepl.types:gpu-array-bb-offset-in-bytes-into-buffer g-arr)
+     (* #.(cffi:foreign-type-size :int) len)
+     (c-array-pointer c-arr)))
+  c-arr)
 
 (defun+ run-all-kind-collision-checks (scene res)
   (with-setf* ((clear-color) (v! 0 0 0 0))
     (do-hash-vals actor-kind (kinds scene)
       (with-slots (collision-fbo
-                   per-actor-c-data
-                   per-actor-gpu-data
                    per-actor-c-len
                    dirty-p)
           actor-kind
@@ -142,19 +149,16 @@
                                           actor-kind
                                           per-actor-c-len
                                           res))))))
-    (do-hash-vals actor-kind (kinds scene)
-      (with-slots (collision-fbo
-                   per-actor-c-data
-                   per-actor-gpu-data
-                   per-actor-c-len
-                   static-p
-                   dirty-p)
-          actor-kind
-        (when (> per-actor-c-len 0)
-          (unless static-p
-            (run-collision-checks scene
-                                  actor-kind
-                                  per-actor-c-len
-                                  res)))))))
+    (with-fbo-bound ((empty-fbo scene)
+                     :attachment-for-size t)
+      (do-hash-vals actor-kind (kinds scene)
+        (with-slots (per-actor-c-len static-p)
+            actor-kind
+          (when (> per-actor-c-len 0)
+            (unless static-p
+              (run-collision-checks scene
+                                    actor-kind
+                                    per-actor-c-len
+                                    res))))))))
 
 ;;------------------------------------------------------------

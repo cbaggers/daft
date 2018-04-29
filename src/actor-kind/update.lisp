@@ -35,13 +35,15 @@
     (vector-push-extend actor (next-frames-actors kind))))
 
 (defun+ write-per-actor-data (actor-kind)
-  (declare (profile t))
+  (declare (profile t)
+           (optimize speed))
   (with-slots (per-actor-c-data
                per-actor-gpu-data
                per-actor-c-len)
       actor-kind
     (let* ((count 0)
            (datum (aref-c per-actor-c-data 0)))
+      (declare (type (unsigned-byte 16) count))
       (when (slot-value actor-kind 'visual)
         (loop
            :for actor :across (this-frames-actors actor-kind)

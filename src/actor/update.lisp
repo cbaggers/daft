@@ -11,7 +11,8 @@
 ;;------------------------------------------------------------
 
 (defun+ write-actor-data (actor c-actor)
-  (declare (profile t))
+  (declare (profile t)
+           (optimize speed))
   (let* ((kind (kind actor))
          (origin (slot-value kind 'origin)))
     (with-slots (current-public-state anim-frame scale) actor
