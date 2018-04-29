@@ -58,7 +58,7 @@
             (float (max (min frame anim-length) 0)
                    0f0)))))
 
-(defun get-frame ()
+(defun+ get-frame ()
   (slot-value *self* 'anim-frame))
 
 ;;------------------------------------------------------------

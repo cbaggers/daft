@@ -33,6 +33,7 @@
     (setf (slot-value next 'rot) (slot-value src 'rot))))
 
 ;;------------------------------------------------------------
+;; these are slow as hell
 
 (defun+ %pos (actor)
   (declare (profile t))
@@ -66,6 +67,52 @@
              (slot-value actor 'next-public-state)
              (slot-value actor 'current-public-state))
          'rot)
+        value))
+
+;;------------------------------------------------------------
+
+(defn current-pos ((actor actor)) vec3
+  (declare (profile t)
+           (optimize (speed 3) (safety 1) (debug 1)))
+  (slot-value (slot-value actor 'current-public-state) 'pos))
+
+(defn next-pos ((actor actor)) vec3
+  (declare (profile t)
+           (optimize (speed 3) (safety 1) (debug 1)))
+  (slot-value (slot-value actor 'next-public-state) 'pos))
+
+(defn (setf current-pos) ((value vec3) (actor actor)) vec3
+  (declare (profile t)
+           (optimize (speed 3) (safety 1) (debug 1)))
+  (setf (slot-value (slot-value actor 'current-public-state) 'pos)
+        value))
+
+(defn (setf next-pos) ((value vec3) (actor actor)) vec3
+  (declare (profile t)
+           (optimize (speed 3) (safety 1) (debug 1)))
+  (setf (slot-value (slot-value actor 'next-public-state) 'pos)
+        value))
+
+(defn current-rot ((actor actor)) single-float
+  (declare (profile t)
+           (optimize (speed 3) (safety 1) (debug 1)))
+  (slot-value (slot-value actor 'current-public-state) 'rot))
+
+(defn next-rot ((actor actor)) single-float
+  (declare (profile t)
+           (optimize (speed 3) (safety 1) (debug 1)))
+  (slot-value (slot-value actor 'next-public-state) 'rot))
+
+(defn (setf current-rot) ((value single-float) (actor actor)) single-float
+  (declare (profile t)
+           (optimize (speed 3) (safety 1) (debug 1)))
+  (setf (slot-value (slot-value actor 'current-public-state) 'rot)
+        value))
+
+(defn (setf next-rot) ((value single-float) (actor actor)) single-float
+  (declare (profile t)
+           (optimize (speed 3) (safety 1) (debug 1)))
+  (setf (slot-value (slot-value actor 'next-public-state) 'rot)
         value))
 
 ;;------------------------------------------------------------

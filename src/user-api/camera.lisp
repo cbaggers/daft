@@ -6,11 +6,14 @@
   (declare (profile t))
   (let* ((actor *self*)
          (offset (v2:rotate (etypecase offset
-                              (number (v! 0 offset))
+                              (number (v2:make 0f0 offset))
                               (vec2 offset))
-                            (%rot actor)))
-         (pos (v2:+ (%pos actor) offset))
-         (camera (camera *current-scene*)))
-    (setf (pos camera) pos)))
+                            (next-rot actor)))
+         (apos (next-pos actor))
+         (camera (camera *current-scene*))
+         (cam-pos (pos camera)))
+    (incf (x cam-pos) (+ (x apos) (x offset)))
+    (incf (y cam-pos) (+ (y apos) (y offset)))
+    nil))
 
 ;;------------------------------------------------------------

@@ -63,10 +63,10 @@
                  :tile-count-x tx
                  :tile-count-y ty))))))
 
-(defun coll-result-array-size (count)
+(defun+ coll-result-array-size (count)
   (* (ceiling count 5000) 5000))
 
-(defun make-col-result-array (count)
+(defun+ make-col-result-array (count)
   (make-c-array
    nil
    :dimensions (coll-result-array-size count)
@@ -125,7 +125,7 @@
                        (* count #.(cffi:foreign-type-size :int)))))
            nil)))))
 
-(defun run-all-kind-collision-checks (scene res)
+(defun+ run-all-kind-collision-checks (scene res)
   (with-setf* ((clear-color) (v! 0 0 0 0))
     (do-hash-vals actor-kind (kinds scene)
       (with-slots (collision-fbo

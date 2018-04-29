@@ -12,6 +12,10 @@
 (defvar *last-frame* (get-internal-real-time))
 (defvar *per-frame-mult*)
 
+(declaim (type (signed-byte 62) *daft-frame-counter*))
+(defvar *daft-frame-counter* 0)
+(defvar *frame-id* 0)
+
 (defun+ step-engine ()
   ;; Update FPS
   (incf *wip*)
@@ -38,7 +42,6 @@
       (incf *frame-id* 1)
       (decf *daft-frame-counter* 1)
       (step-host)
-      (tiny-time-manager:update)
       (update-actor-kinds scene)
       (run-all-kind-collision-checks scene res)
       (livesupport:continuable
@@ -55,10 +58,6 @@
       (decay-events))))
 
 ;;------------------------------------------------------------
-
-(declaim (type (signed-byte 62) *daft-frame-counter*))
-(defvar *daft-frame-counter* 0)
-(defvar *frame-id* 0)
 
 (defun+ daft (action &optional (frames -1))
   (ecase action
