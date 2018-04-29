@@ -76,8 +76,11 @@
                            (cepl-context)
                            (add-surface (cepl-context)
                                         :fullscreen t
+					:resizable nil
+					:no-frame t
                                         :width 1920
-                                        :height 1080)))
+                                        :height 1080))
+			  (sdl2:restore-window (current-surface)))
                         (repl)))
                   ;; kick host, hopefully we have a size now :p
                   (step-host)
