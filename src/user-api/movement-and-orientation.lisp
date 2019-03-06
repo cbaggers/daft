@@ -147,14 +147,6 @@
              (- (* (ceiling (y p2) (y grid-size)) (y grid-size))
                 (y p2)))))
 
-(defun+ set-position-relative-to (actor offset2)
-  (let ((apos (current-pos actor)))
-    (setf (next-pos *self*)
-          (v3:make (+ (x apos) (x offset2))
-                   (+ (y apos) (y offset2))
-                   (z (next-pos *self*))))
-    nil))
-
 ;;------------------------------------------------------------
 
 (defun+ position-between (actor-a actor-b zero-to-one)

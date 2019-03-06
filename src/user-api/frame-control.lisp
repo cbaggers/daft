@@ -3,6 +3,7 @@
 ;;------------------------------------------------------------
 
 (defun+ next-frame (&optional range)
+  ;; range is (start-frame number-of-frames)
   (declare (profile t))
   (let ((start-frame (if range
                          (first range)
@@ -35,6 +36,7 @@
                      0f0))))))
 
 (defun+ advance-frame (amount &optional range)
+  ;; range is (start-frame end-frame)
   (declare (profile t))
   (let* ((start-frame (if range
                           (first range)
@@ -49,6 +51,7 @@
                              anim-length)
                         start-frame)
                      0f0))))))
+
 
 (defun+ set-frame (frame)
   (declare (profile t))

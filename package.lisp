@@ -64,7 +64,6 @@
    :turn-left
    :turn-right
    :turn-towards
-   :kill-actor-kind!
    :depth
    :snap-position
    :focus-camera
@@ -80,7 +79,6 @@
    :remove-timer
    :time-p
    :scale
-   :set-position-relative-to
    :point-at
    :set-frame
    :get-frame
