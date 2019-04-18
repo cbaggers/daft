@@ -23,6 +23,33 @@ eb56f23 * default gamepad
 - scale is absolute, is this ok?
 - position-between & offset-to were neccessary for bomberchap
   but don't fit our model
+- *screen-height-in-game-units* feels like it should be part of
+  some setup code
+- top level vars like (*orb* and *ship*) indicate some need for
+  something like named resources
+- not knowing about the screen makes things difficult. Even
+  relative position would help.
+- system doesnt handle stopping and restarting. Have to delete
+  old actors ourselves. I think the issue I was having whilst
+  making orb was restarting by switching 'god' back to the :setup
+  state (yup that was it)
+- Some things which in the games are treated like one 'unit'
+  (e.g. the wall in orb) are made of many actors and always
+  treated seperately. It would be cool to be able to refer to
+  them 'on mass' in some way.
+- Better time functions. Be able to set up a point in time and
+  get time since. etc
+- only being able to check collision by kind suuuuucks
+- need to be send messages to other entities (inbox?)
+- Add fixed timestep
+- Solidify what being 'in-world' means. Where are we? how do
+  we focus the camera in places? etc
+- Data in the local-data section of an actor cant be computed
+  from values passed from spawn
+- actors should be *either* constrained to the world or
+  automatically die if they leave.
+- some kind of relationship between rotation and visual? (think
+  bomber-chap's side view)
 
 ## Things to add
 - a way to reset (see orb for a case where we wanted this)
