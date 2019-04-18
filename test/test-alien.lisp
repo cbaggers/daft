@@ -4,7 +4,7 @@
 
 (define-god ((spawn-counter (make-stepper (seconds 10)
                                           (seconds 10)))
-             (spin-counter (make-stepper (seconds 2))))
+             (spin-counter (make-stepper (seconds 1118))))
   (:game-starting
    (spawn 'ship (v! 0 -140))
    (change-state :game-running))
@@ -14,19 +14,24 @@
    (when (funcall spin-counter)
      (spawn 'spin-emit (v! (- (random 400) 200) 300)))))
 
-(define-actor bullet ((:visual "test/bullet.png")
+(define-actor bullet ((:variants (bullet1 bullet2))
+                      (:visual "test/bullet.png")
                       (fired-by nil)
                       (speed 1))
   (:main
-   (when (or (coll-with 'alien)
-             (not (in-world-p)))
-     (die))
-   (move-forward 4)))
+   (if (typep *self* 'bullet1)
+       (when (coll-with 'bullet2)
+         (die))
+       (progn
+         (when (or (coll-with 'alien)
+                   (not (in-world-p)))
+           (die))
+         (move-forward 4)))))
 
 (define-actor spin-emit ((:visual "test/bullet.png")
                          (:noisy nil)
-                         (fire (make-stepper (seconds 0.04)
-                                             (seconds 0.04))))
+                         (fire (make-stepper (seconds 0.1)
+                                             (seconds 0.1))))
   (:main
    (compass-dir-move (v! 0 -3))
    (turn-left 4)
@@ -73,8 +78,8 @@
    (when (and (or (mouse-button (mouse) mouse.left)
                   (pad-button 0))
               (funcall fire))
-     (spawn 'bullet (v! 0 40)
-            :fired-by *self*))
+     (print (spawn 'bullet2 (v! 0 40)
+              :fired-by *self*)))
    (v2:incf speed (v2:*s (compass-dir)
                          (float (* (pad-1d 1) 0.2) 1f0)))
    (setf speed (v2:*s speed 0.99))

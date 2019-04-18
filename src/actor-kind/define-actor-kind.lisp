@@ -29,7 +29,8 @@
            (class-name (kind-class-name name))
            (static-p (null state-names)))
       (assert (every #'keywordp state-names))
-      (destructuring-bind (&key visual tile-count noisy default-depth origin
+      (destructuring-bind (&key variants visual tile-count noisy
+                                default-depth origin
                                 collision-mask)
           (reduce #'append keyword-vars)
         (assert (member noisy '(t nil)))
@@ -50,9 +51,19 @@
              (defclass ,class-name (actor-kind)
                ((name :initform ',name)
                 (static-p :initform ,static-p)))
+             ,@(loop
+                  :for variant :in variants
+                  :append
+                    `((defclass ,(kind-class-name variant) (,class-name)
+                        ())
+                      (defclass ,variant (,name)
+                        ((name :initform ',variant)))))
              ,(gen-actor-class name private-vars)
-             ,(gen-spawn name private-vars noisy default-state static-p
-                         default-depth)
+             ,(if variants
+                  (gen-variant-spawn name private-vars noisy default-state
+                                     static-p default-depth variants)
+                  (gen-spawn name private-vars noisy default-state static-p
+                             default-depth))
              ,(unless static-p
                 (gen-update-method name state-funcs state-names))
              ,@state-funcs
@@ -109,6 +120,57 @@
            (when ,noisy
              (format t "~%; ~a has spawned!" debug-name))
            actor)))))
+
+(defun+ gen-variant-spawn (name private-vars noisy default-state static-p
+                                default-depth variants)
+  (let* ((key-args (loop :for (name val) :in private-vars :collect
+                        `(,name nil ,(gensym)))))
+    `(progn
+       ,@(loop
+            :for variant :in variants
+            :collect
+              `(defmethod+ spawn ((kwd-kind-name (eql ',variant)) pos
+                                  &key ,@key-args)
+                 (let ((scene *current-scene*))
+                   (spawn-variant (make-instance ',variant)
+                                  (get-actor-kind-by-name scene ',variant)
+                                  pos
+                                  ,@(loop
+                                       :for (arg-name nil was-set) :in key-args
+                                       :append (list arg-name was-set))))))
+       (defmethod+ spawn-variant ((actor ,name) kind-obj pos &rest rest)
+         (destructuring-bind ,(loop
+                                 :for (arg-name nil was-set) :in key-args
+                                 :append (list arg-name was-set))
+             rest
+           (let* ((creator *self*)
+                  (*self* actor))
+             (with-slots (current-public-state
+                          next-public-state
+                          debug-name
+                          state
+                          kind)
+                 actor
+               (setf (dirty-p kind-obj) t)
+               (setf state ,default-state)
+               (setf kind kind-obj)
+               (setf current-public-state (make-public-state pos
+                                                             creator
+                                                             ,default-depth))
+               (setf next-public-state (make-public-state))
+               (reinit-system-state actor)
+               ,@(loop
+                    :for (slot-name val) :in private-vars
+                    :for (arg-name nil was-set) :in key-args
+                    :collect
+                      `(setf (slot-value actor ',slot-name)
+                             (if ,was-set ,arg-name ,val)))
+               (vector-push-extend actor ,(if static-p
+                                              `(this-frames-actors kind-obj)
+                                              `(next-frames-actors kind-obj)))
+               (when ,noisy
+                 (format t "~%; ~a has spawned!" debug-name))
+               actor)))))))
 
 (defgeneric reinit-kind (kind))
 
